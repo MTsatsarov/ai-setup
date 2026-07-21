@@ -1,0 +1,56 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "backend-framework/nestjs",
+  "axis": "backend-framework",
+  "label": "NestJS (TypeScript)",
+  "description": "Modular TypeScript backend — @Module/@Controller/@Injectable triad, DI by token, class-validator DTOs, Swagger from decorators.",
+
+  "traits": { "language": "typescript", "runtime": "node" },
+
+  "vars": {
+    "name": "NestJS",
+    "src_dir": "apps/api/src",
+    "app_dir": "apps/api",
+    "common_dir": "apps/api/src/common",
+    "claude_rules": [
+      "Backend and frontend are **separate concerns** — never mix them in a single agent",
+      "No business logic in controllers — controllers delegate to injectable services",
+      "Request DTOs carry class-validator decorators and pass through the global `ValidationPipe`"
+    ]
+  },
+
+  "provides": {
+    "backend-models": "slots/backend-models.md",
+    "backend-service": "slots/backend-service.md",
+    "backend-code-quality": "slots/backend-code-quality.md"
+  },
+
+  "emit_as": {
+    "backend-service": "backend-module"
+  },
+
+  "contributes": {
+    "claude-md#stack": "sections/claude-stack.md"
+  },
+
+  "agent": {
+    "backend-developer": {
+      "description": "TypeScript backend only — NestJS modules/controllers/services, DTOs, guards. Never touches frontend code.",
+      "lsp_trace": "a DTO or service method to its implementation",
+      "impl_order": "schema (+ migration) → module → service → controller",
+      "context": [
+        "Backend source lives in `apps/api/src`, one folder per feature",
+        "Features are wired as `@Module`s imported by `AppModule`",
+        "DTOs live in the feature's `dto/` folder and are validated by the global `ValidationPipe`"
+      ],
+      "rules": [
+        "Never put business logic in a controller — delegate to an injectable service",
+        "Inject providers by token via DI; never `new` a dependency inside a class",
+        "Never touch frontend code"
+      ]
+    }
+  },
+
+  "verify": { "build": "npm --workspace apps/api run build" },
+  "settings": { "enabledPlugins": ["typescript-lsp@claude-plugins-official"] }
+}

@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "tracker/jira",
+  "axis": "tracker",
+  "label": "Jira",
+  "description": "Issue keys look like PROJ-123.",
+  "vars": {
+    "name": "Jira",
+    "id_example": "PROJ-123"
+  }
+}

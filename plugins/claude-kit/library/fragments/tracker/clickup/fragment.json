@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "tracker/clickup",
+  "axis": "tracker",
+  "label": "ClickUp",
+  "description": "Task ids look like 86abc12.",
+  "vars": {
+    "name": "ClickUp",
+    "id_example": "86abc12"
+  }
+}

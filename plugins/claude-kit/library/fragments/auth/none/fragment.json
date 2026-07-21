@@ -1,0 +1,10 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "auth/none",
+  "axis": "auth",
+  "label": "No auth",
+  "description": "Open API, authentication added later.",
+  "vars": {
+    "name": "none"
+  }
+}

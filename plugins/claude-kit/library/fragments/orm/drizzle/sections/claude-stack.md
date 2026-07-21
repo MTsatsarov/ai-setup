@@ -1,0 +1,1 @@
+- **ORM:** <% orm.name %>, PostgreSQL — schema at `<% orm.schema_dir %>`, generated migrations at `<% orm.migrations_dir %>` (never hand-edited)

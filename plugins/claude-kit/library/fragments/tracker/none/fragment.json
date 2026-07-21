@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "tracker/none",
+  "axis": "tracker",
+  "label": "No tracker",
+  "description": "Work is not tracked in a tool.",
+  "vars": {
+    "name": "none",
+    "id_example": ""
+  }
+}

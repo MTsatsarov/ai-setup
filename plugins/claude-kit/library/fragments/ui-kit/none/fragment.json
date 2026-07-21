@@ -1,0 +1,10 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "ui-kit/none",
+  "axis": "ui-kit",
+  "label": "No UI kit",
+  "description": "Plain markup, no component library.",
+  "vars": {
+    "name": "none"
+  }
+}

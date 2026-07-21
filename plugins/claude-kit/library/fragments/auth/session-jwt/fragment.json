@@ -1,0 +1,10 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "auth/session-jwt",
+  "axis": "auth",
+  "label": "Session / JWT",
+  "description": "Server-issued token or session cookie, no roles.",
+  "vars": {
+    "name": "session-based (JWT)"
+  }
+}

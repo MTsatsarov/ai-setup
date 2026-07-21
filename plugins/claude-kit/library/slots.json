@@ -1,0 +1,47 @@
+{
+  "$comment": "Canonical skill slots. 'owner_axis' names the axis whose selected fragment supplies the body. 'composite' slots additionally append sections contributed by other axes. 'emit_as' is declared per-fragment, not here — see fragment.json.",
+
+  "slots": {
+    "backend-entities": {
+      "owner_axis": "orm",
+      "group": "Backend",
+      "agent": "backend-developer",
+      "composite": false
+    },
+    "backend-migrations": {
+      "owner_axis": "orm",
+      "group": "Backend",
+      "agent": "backend-developer",
+      "composite": false
+    },
+    "backend-models": {
+      "owner_axis": "backend-framework",
+      "group": "Backend",
+      "agent": "backend-developer",
+      "composite": false
+    },
+    "backend-service": {
+      "owner_axis": "backend-framework",
+      "group": "Backend",
+      "agent": "backend-developer",
+      "composite": true,
+      "$comment": "The framework owns the module/controller/service shape; the ORM supplies the data-access blocks via the #provider and #crud_base anchors. Keeping those in the ORM fragment is what lets a future orm/prisma drop in without forking the NestJS body.",
+      "contributor_order": ["orm"]
+    },
+    "backend-code-quality": {
+      "owner_axis": "backend-framework",
+      "group": "Backend",
+      "agent": "backend-developer",
+      "composite": true,
+      "contributor_order": ["orm", "auth", "authz"]
+    }
+  },
+
+  "agents": {
+    "backend-developer": {
+      "template": "base/agents/backend-developer.md.tmpl",
+      "required_axis": "backend-framework",
+      "skip_when": { "backend-framework": ["none"] }
+    }
+  }
+}

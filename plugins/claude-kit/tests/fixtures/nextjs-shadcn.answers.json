@@ -1,0 +1,18 @@
+{
+  "$comment": "Reproduces the backend half of a hand-copied payload repo. The golden render for this fixture is the M1 acceptance test.",
+  "project": {
+    "name": "nextjs-shadcn",
+    "notification_title": "nextjs-shadcn",
+    "repo": "example/nextjs-shadcn",
+    "github_user": "MTsatsarov"
+  },
+  "answers": {
+    "backend-framework": "nestjs",
+    "orm": "drizzle",
+    "frontend-framework": "nextjs-app",
+    "ui-kit": "shadcn",
+    "auth": "session-jwt",
+    "authz": "none",
+    "tracker": "clickup"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "ui-kit/shadcn",
+  "axis": "ui-kit",
+  "label": "shadcn/ui + Tailwind",
+  "description": "Copy-in Radix primitives styled with Tailwind.",
+  "vars": {
+    "name": "shadcn/ui + Tailwind"
+  },
+  "requires": {
+    "frontend-framework": [
+      "nextjs-app"
+    ]
+  }
+}

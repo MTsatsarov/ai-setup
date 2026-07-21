@@ -1,0 +1,75 @@
+{
+  "$comment": "The interview. Axes are asked in array order. An axis is SKIPPED and auto-selected when an earlier answer's 'implies' pins it, or when 'requires' filters its options down to exactly one. Option labels/descriptions live in each fragment.json, not here. Every option listed here MUST have a fragment directory — this file declares what claude-kit actually supports, so abp-dotnet/efcore appear only once their fragments are authored (M2).",
+  "axes": [
+    {
+      "id": "backend-framework",
+      "header": "Backend",
+      "question": "Which backend framework?",
+      "required": true,
+      "options": [
+        "nestjs"
+      ]
+    },
+    {
+      "id": "orm",
+      "header": "ORM",
+      "question": "Which ORM / data-access layer?",
+      "required": true,
+      "options": [
+        "drizzle"
+      ]
+    },
+    {
+      "id": "frontend-framework",
+      "header": "Frontend",
+      "question": "Which frontend framework?",
+      "required": true,
+      "options": [
+        "nextjs-app",
+        "angular",
+        "none"
+      ]
+    },
+    {
+      "id": "ui-kit",
+      "header": "UI kit",
+      "question": "Which UI component library?",
+      "required": true,
+      "options": [
+        "shadcn",
+        "primeng",
+        "none"
+      ]
+    },
+    {
+      "id": "auth",
+      "header": "Auth",
+      "question": "How are users authenticated?",
+      "required": true,
+      "options": [
+        "session-jwt",
+        "none"
+      ]
+    },
+    {
+      "id": "authz",
+      "header": "Authz",
+      "question": "How is authorization modelled?",
+      "required": true,
+      "options": [
+        "none"
+      ]
+    },
+    {
+      "id": "tracker",
+      "header": "Tracker",
+      "question": "Which task tracker?",
+      "required": true,
+      "options": [
+        "clickup",
+        "jira",
+        "none"
+      ]
+    }
+  ]
+}

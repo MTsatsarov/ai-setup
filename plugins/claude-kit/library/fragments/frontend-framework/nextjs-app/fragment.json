@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "frontend-framework/nextjs-app",
+  "axis": "frontend-framework",
+  "label": "Next.js (App Router)",
+  "description": "React Server Components by default, file-system routing under app/.",
+  "vars": {
+    "name": "Next.js",
+    "app_dir": "apps/web",
+    "src_dir": "apps/web/src"
+  },
+  "contributes": {
+    "claude-md#stack": "sections/claude-stack.md"
+  }
+}

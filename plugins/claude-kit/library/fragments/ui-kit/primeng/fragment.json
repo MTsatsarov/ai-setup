@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "ui-kit/primeng",
+  "axis": "ui-kit",
+  "label": "PrimeNG",
+  "description": "PrimeNG component suite for Angular.",
+  "vars": {
+    "name": "PrimeNG"
+  },
+  "requires": {
+    "frontend-framework": [
+      "angular"
+    ]
+  }
+}

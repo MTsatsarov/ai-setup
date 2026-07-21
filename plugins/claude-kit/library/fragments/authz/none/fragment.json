@@ -1,0 +1,10 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "authz/none",
+  "axis": "authz",
+  "label": "No authorization",
+  "description": "Any authenticated caller may do anything.",
+  "vars": {
+    "name": "none"
+  }
+}

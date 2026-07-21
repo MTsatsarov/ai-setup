@@ -1,0 +1,9 @@
+node_modules/
+.DS_Store
+
+# Generator scratch — plan.json is derived from answers.json, never committed.
+.claude-kit/plan.json
+plugins/claude-kit/tests/.out/
+
+# Session-local permission grants, not shared config.
+.claude/settings.local.json

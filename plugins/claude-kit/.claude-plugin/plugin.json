@@ -1,0 +1,10 @@
+{
+  "name": "claude-kit",
+  "version": "0.1.0",
+  "description": "Interview-driven project scaffolder that assembles a per-project .claude/ payload from composable stack fragments.",
+  "author": {
+    "name": "Mihail Tsatsariv",
+    "email": "mihailtsatsarov92@gmail.com"
+  },
+  "keywords": ["scaffold", "bootstrap", "skills", "agents", "generator"]
+}

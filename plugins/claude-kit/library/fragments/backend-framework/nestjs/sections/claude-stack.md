@@ -1,0 +1,1 @@
+- **Backend:** <% backend.name %> (TypeScript) — source at `<% backend.src_dir %>`, one folder per feature

@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "frontend-framework/angular",
+  "axis": "frontend-framework",
+  "label": "Angular (standalone components)",
+  "description": "Standalone components, reactive forms, RxJS service layer.",
+  "vars": {
+    "name": "Angular",
+    "app_dir": "angular",
+    "src_dir": "angular/src"
+  },
+  "contributes": {
+    "claude-md#stack": "sections/claude-stack.md"
+  }
+}

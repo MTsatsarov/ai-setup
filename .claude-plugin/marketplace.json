@@ -1,0 +1,18 @@
+{
+  "name": "ai-setup",
+  "description": "Claude Code project setup tooling — interview-driven scaffolding and .claude/ payload generation",
+  "owner": {
+    "name": "Mihail Tsatsariv",
+    "email": "mihailtsatsarov92@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "claude-kit",
+      "description": "Scaffold a new project from official stack CLIs, layer house conventions, and generate a complete .claude/ setup (CLAUDE.md, agents, skills, hooks, settings.json).",
+      "source": "./plugins/claude-kit",
+      "version": "0.1.0",
+      "category": "workflow",
+      "tags": ["scaffolding", "skills", "agents", "nestjs", "abp", "drizzle", "efcore"]
+    }
+  ]
+}

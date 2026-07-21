@@ -1,0 +1,156 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "claude-kit fragment manifest",
+  "type": "object",
+  "required": ["id", "axis", "label"],
+  "additionalProperties": false,
+
+  "properties": {
+    "$schema": { "type": "string" },
+    "$comment": { "type": "string" },
+
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+/[a-z0-9-]+$",
+      "description": "<axis>/<option>, must match the directory path"
+    },
+    "axis": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "label": { "type": "string", "description": "Shown as the option label in the interview" },
+    "description": { "type": "string", "description": "Shown as the option description in the interview" },
+
+    "requires": {
+      "type": "object",
+      "description": "axis -> allowed options. This fragment is only offered when every listed axis holds one of the listed values.",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    },
+    "implies": {
+      "type": "object",
+      "description": "axis -> single option. Pins a later axis and removes its question entirely.",
+      "additionalProperties": { "type": "string" }
+    },
+    "conflicts": {
+      "type": "array",
+      "description": "Fragment ids that cannot co-exist with this one.",
+      "items": { "type": "string" }
+    },
+
+    "traits": {
+      "type": "object",
+      "description": "Free-form facts other fragments and templates may branch on.",
+      "additionalProperties": { "type": ["string", "number", "boolean"] }
+    },
+    "vars": {
+      "type": "object",
+      "description": "Template variables, exposed under the axis namespace (e.g. orm.schema_dir). Arrays of strings are allowed for bullet lists consumed by <% each %>.",
+      "additionalProperties": {
+        "anyOf": [
+          { "type": ["string", "number", "boolean"] },
+          { "type": "array", "items": { "type": "string" } }
+        ]
+      }
+    },
+
+    "agent": {
+      "type": "object",
+      "description": "Contributions to generated agent files, keyed by agent name. Scalar fields may only be set by the axis named as that agent's required_axis in slots.json; every fragment may contribute array fields, which concatenate in axis order.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "description": { "type": "string" },
+          "lsp_trace": { "type": "string" },
+          "impl_order": { "type": "string" },
+          "lsp_caveat": { "type": "string" },
+          "context": { "type": "array", "items": { "type": "string" } },
+          "rules": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+
+    "provides": {
+      "type": "object",
+      "description": "slot id -> path to the body file, relative to this fragment dir.",
+      "additionalProperties": { "type": "string" }
+    },
+    "emit_as": {
+      "type": "object",
+      "description": "canonical slot id -> filename to emit under. Preserves domain vocabulary (backend-service -> backend-appservice).",
+      "additionalProperties": { "type": "string", "pattern": "^[a-z0-9-]+$" }
+    },
+    "contributes": {
+      "type": "object",
+      "description": "target -> path to a markdown section, relative to this fragment dir. '<slot>#<anchor>' is rendered first and injected into the owner body at <% sections.<anchor> %>. A bare '<slot>' appends to the end of the owner body. 'claude-md#<anchor>' feeds the CLAUDE.md template the same way.",
+      "additionalProperties": { "type": "string" },
+      "propertyNames": { "pattern": "^[a-z0-9-]+(#[a-z0-9_]+)?$" }
+    },
+
+    "hooks": {
+      "type": "object",
+      "description": "hook name -> array of rules contributed to that generated hook script.",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["path_contains", "message"],
+          "additionalProperties": false,
+          "properties": {
+            "path_contains": { "type": "string" },
+            "ext": { "type": "string" },
+            "message": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "scaffold": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["run"],
+            "additionalProperties": false,
+            "properties": {
+              "run": { "type": "string" },
+              "cwd": { "type": "string" },
+              "note": { "type": "string" }
+            }
+          }
+        },
+        "conventions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "to"],
+            "additionalProperties": false,
+            "properties": {
+              "from": { "type": "string" },
+              "to": { "type": "string" }
+            }
+          }
+        },
+        "wiring": { "type": "string" },
+        "env": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+
+    "verify": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "build": { "type": "string" },
+        "test": { "type": "string" }
+      }
+    },
+
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabledPlugins": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

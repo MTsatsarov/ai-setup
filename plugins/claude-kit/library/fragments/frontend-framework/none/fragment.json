@@ -1,0 +1,10 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "frontend-framework/none",
+  "axis": "frontend-framework",
+  "label": "No frontend",
+  "description": "Backend-only project.",
+  "vars": {
+    "name": "none"
+  }
+}
