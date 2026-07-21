@@ -16,6 +16,8 @@
     "migration_cwd": "apps/api",
     "migration_ext": "sql",
     "read_filter": "eq(table.isDeleted, false)",
+    "nest_module": "DrizzleModule",
+    "nest_module_import": "import { DrizzleModule } from './common/db/drizzle.module';",
     "quality_checks": [
       "Reads always exclude soft-deleted rows with `eq(table.isDeleted, false)`",
       "Composable `SQL` condition-builders (query objects) are used for complex filtering",
@@ -69,13 +71,14 @@
   },
 
   "scaffold": {
-    "$comment": "Verified end to end: after these steps `drizzle-kit generate` produces correct SQL (audit columns, FK with ON DELETE restrict, indexes) and the app compiles against the CRUD base.",
+    "$comment": "Verified end to end: after these steps `drizzle-kit generate` produces correct SQL (audit columns, FK with ON DELETE restrict, indexes), the app compiles against the CRUD base, boots, and serves Swagger. tsconfig.build.json is overridden because drizzle.config.ts sits beside src/ and would otherwise widen the TS rootDir, emitting dist/src/main.js and breaking NestJS's own `start:prod` (`node dist/main`).",
     "commands": [
       { "run": "npm install --workspace apps/api drizzle-orm pg" },
       { "run": "npm install --workspace apps/api -D drizzle-kit @types/pg" }
     ],
     "conventions": [
       { "from": "conventions/files/drizzle.config.ts", "to": "apps/api/drizzle.config.ts" },
+      { "from": "conventions/files/tsconfig.build.json", "to": "apps/api/tsconfig.build.json" },
       { "from": "conventions/files/schema/_shared.ts", "to": "<% orm.schema_dir %>/_shared.ts" },
       { "from": "conventions/files/schema/index.ts", "to": "<% orm.schema_dir %>/index.ts" },
       { "from": "conventions/files/db/drizzle.module.ts", "to": "<% backend.common_dir %>/db/drizzle.module.ts" },

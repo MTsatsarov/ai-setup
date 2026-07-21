@@ -1,0 +1,26 @@
+Would scaffold into /tmp/kit-golden
+
+Commands (10) — run in order, stopping at the first failure:
+   1. dotnet new sln --name DemoCRM
+   2. dotnet new webapi --use-controllers --name DemoCRM.Api --output src/DemoCRM.Api
+   3. dotnet sln add src/DemoCRM.Api/DemoCRM.Api.csproj
+   4. dotnet add src/DemoCRM.Api package Swashbuckle.AspNetCore
+   5. rm -f src/DemoCRM.Api/WeatherForecast.cs src/DemoCRM.Api/Controllers/WeatherForecastController.cs
+      note: the template's sample endpoint is replaced by the first real feature
+   6. dotnet add src/DemoCRM.Api package Microsoft.EntityFrameworkCore
+   7. dotnet add src/DemoCRM.Api package Microsoft.EntityFrameworkCore.Design
+   8. dotnet add src/DemoCRM.Api package Npgsql.EntityFrameworkCore.PostgreSQL
+   9. dotnet tool install --global dotnet-ef
+      note: skip if already installed; `dotnet tool update --global dotnet-ef` to refresh
+  10. dotnet add src/DemoCRM.Api package AutoMapper
+
+Convention files (4) — rendered from the library, then written:
+  src/DemoCRM.Api/Common/Entities/AuditedEntity.cs
+  src/DemoCRM.Api/Common/Models/PaginationQuery.cs
+  src/DemoCRM.Api/Common/Data/AppDbContext.cs
+  src/DemoCRM.Api/Common/Services/CrudService.cs
+
+Environment (.env.example, 1 key(s)):
+  ConnectionStrings__Default
+
+Nothing was written — this was --dry-run.

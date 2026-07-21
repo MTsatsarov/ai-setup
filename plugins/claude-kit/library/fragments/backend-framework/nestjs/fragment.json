@@ -53,7 +53,7 @@
     "commands": [
       {
         "run": "npx -y @nestjs/cli@latest new apps/api --skip-git --skip-install --package-manager npm",
-        "note": "creates apps/api; run from the repo root with a workspaces package.json already present"
+        "note": "creates apps/api under the root workspaces package.json written in the pre phase"
       },
       {
         "run": "npm install --workspaces --include-workspace-root"
@@ -63,13 +63,22 @@
       },
       {
         "run": "rm -f apps/api/src/app.controller.ts apps/api/src/app.service.ts apps/api/src/app.controller.spec.ts",
-        "note": "the CLI's sample controller/service are replaced by the first real feature"
+        "note": "the CLI's sample controller/service are replaced by the first real feature; the app.module.ts convention below drops the imports they left behind"
       }
     ],
     "conventions": [
       {
+        "from": "conventions/files/package.json",
+        "to": "package.json",
+        "phase": "pre"
+      },
+      {
         "from": "conventions/files/main.ts",
         "to": "apps/api/src/main.ts"
+      },
+      {
+        "from": "conventions/files/app.module.ts",
+        "to": "apps/api/src/app.module.ts"
       },
       {
         "from": "conventions/files/dto/pagination-query.dto.ts",

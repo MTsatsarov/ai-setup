@@ -1,0 +1,13 @@
+{
+  "name": "<% project.slug %>",
+  "version": "0.0.1",
+  "description": "<% project.description %>",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  }
+}

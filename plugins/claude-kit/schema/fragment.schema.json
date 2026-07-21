@@ -127,7 +127,12 @@
             "additionalProperties": false,
             "properties": {
               "from": { "type": "string" },
-              "to": { "type": "string" }
+              "to": { "type": "string" },
+              "phase": {
+                "enum": ["pre", "post"],
+                "default": "post",
+                "description": "'post' (the default) writes the file after every scaffold command, so it can overlay what a CLI generated. 'pre' writes it before any command runs — for files a command itself depends on, such as the root workspaces package.json that `npm install --workspaces` needs."
+              }
             }
           }
         },

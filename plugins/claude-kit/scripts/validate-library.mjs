@@ -69,6 +69,21 @@ function checkStructure(lib) {
         err(`${id}: "${key}" points at ${rel}, which does not exist`);
       }
     }
+    // Scaffold sources are not covered by the provides/contributes loop above,
+    // so a typo'd convention path would otherwise ship silently and only fail
+    // mid-scaffold, with a half-built project already on disk.
+    for (const conv of frag.scaffold?.conventions ?? []) {
+      if (!existsSync(join(frag._dir, conv.from))) {
+        err(`${id}: scaffold convention points at ${conv.from}, which does not exist`);
+      }
+      if (conv.phase !== undefined && conv.phase !== 'pre' && conv.phase !== 'post') {
+        err(`${id}: scaffold convention "${conv.to}" has phase "${conv.phase}" — use "pre" or "post"`);
+      }
+    }
+    for (const cmd of frag.scaffold?.commands ?? []) {
+      if (!cmd.run?.trim()) err(`${id}: scaffold command has an empty "run"`);
+    }
+
     for (const slot of Object.keys(frag.provides ?? {})) {
       if (!lib.slots[slot]) err(`${id}: provides unknown slot "${slot}"`);
       else if (lib.slots[slot].owner_axis !== frag.axis) {

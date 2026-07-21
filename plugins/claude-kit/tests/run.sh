@@ -49,6 +49,31 @@ for fixture in tests/fixtures/*.answers.json; do
   rm -rf "$out"
 done
 
+# --- 3b. golden scaffold plan per fixture ------------------------------------
+# The --dry-run output is exactly what the user approves before anything runs,
+# so it is worth pinning. Offline and instant: it never invokes dotnet or npm,
+# but it does catch a var that stops expanding or a command that moves.
+step "golden scaffold"
+for fixture in tests/fixtures/*.answers.json; do
+  name=$(basename "$fixture" .answers.json)
+  out=$(mktemp -d)
+
+  node scripts/resolve.mjs --answers "$fixture" --out "$out/plan.json" --quiet
+  # A fixed fake root keeps the output stable across machines.
+  node scripts/scaffold.mjs --plan "$out/plan.json" --root /tmp/kit-golden --dry-run \
+    >"$out/scaffold.txt" 2>&1
+
+  golden="tests/golden/$name.scaffold.txt"
+  if [ ! -f "$golden" ]; then
+    fail "$name — no scaffold golden; run tests/update-golden.sh"
+  elif diff -u "$golden" "$out/scaffold.txt"; then
+    pass "$name"
+  else
+    fail "$name — scaffold plan differs from golden (above)"
+  fi
+  rm -rf "$out"
+done
+
 # --- 4. the drift check that motivated the whole generator --------------------
 # CLAUDE.md's skill list, the agent's `skills:` frontmatter, and the actual
 # skills/ directory must agree. Both source repos had these three disagree.

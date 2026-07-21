@@ -1,15 +1,16 @@
 ---
 name: new-project
-description: Scaffold a new project — interview the user about their stack (backend framework, ORM, frontend, auth, authorization, task tracker), then generate a complete .claude/ setup with CLAUDE.md, a backend-developer agent, stack-specific skills, protective hooks and settings.json.
+description: Create a new project — interview the user about their stack (backend framework, ORM, frontend, auth, authorization, task tracker), then generate both the running application (via the stack's own CLIs) and a complete .claude/ setup with CLAUDE.md, agents, stack-specific skills, protective hooks and settings.json.
 argument-hint: "[project-name] — optional; you will be asked if omitted"
 allowed-tools: Read, Write, Bash, Glob, Grep, AskUserQuestion
 ---
 
-# Scaffold a new project
+# Create a new project
 
-Generate a project's `.claude/` payload by interviewing the user and assembling
-composable per-axis fragments. Everything stack-specific lives in the library;
-your job is to run the interview and drive the scripts.
+Interview the user, then produce two things from the same resolved plan: the
+application itself (scaffolded with the stack's own CLIs) and its `.claude/`
+payload, assembled from composable per-axis fragments. Everything stack-specific
+lives in the library; your job is to run the interview and drive the scripts.
 
 `$ARGUMENTS` may contain the project name.
 
@@ -106,13 +107,7 @@ Show the user, from the resolver's output:
 
 Ask for confirmation before writing.
 
-## Phase 5 — Application code
-
-Not implemented yet. `.claude/` is generated; the app itself is not scaffolded.
-Tell the user plainly that they still need to create the application (e.g. `nest new`),
-and that the generated skills describe the conventions that code should follow.
-
-## Phase 6 — Generate
+## Phase 5 — Generate `.claude/`
 
 ```bash
 node "$KIT/scripts/render.mjs" \
@@ -120,6 +115,36 @@ node "$KIT/scripts/render.mjs" \
 ```
 
 Hooks are written executable; no `chmod` step is needed.
+
+This runs **before** scaffolding on purpose: rendering is offline and cannot fail,
+so a scaffold that dies halfway still leaves a usable payload behind.
+
+## Phase 6 — Application code
+
+Show the user what will run, then run it.
+
+```bash
+node "$KIT/scripts/scaffold.mjs" \
+  --plan .claude-kit/plan.json --root . --dry-run
+```
+
+Show that output verbatim — it is the exact command list, in execution order, plus
+the convention files that will be written. Ask **once** for confirmation. On yes:
+
+```bash
+node "$KIT/scripts/scaffold.mjs" --plan .claude-kit/plan.json --root .
+```
+
+Then run each `build` in `plan.json`'s `verify` array and report the result honestly.
+
+If a command fails, the script stops and prints the failing step. Report that step and
+its output verbatim, then stop. Do **not** improvise a fix, skip the step, or re-run
+with different flags — a scaffold failure usually means a fragment is wrong, and that
+belongs in the library, not in a one-off workaround. `--from <n>` resumes after the
+user has fixed the cause.
+
+The script refuses to run in a non-empty directory. That guard is deliberate; do not
+pass `--force` to get around it without the user explicitly asking.
 
 ## Phase 7 — Report and offer to commit
 

@@ -248,16 +248,56 @@ export function resolvePlan(answersDoc) {
 
   const verify = selected
     .filter((f) => f.verify?.build)
-    .map((f) => ({ from: f.id, build: f.verify.build }));
+    .map((f) => ({ from: f.id, axis: f.axis, build: f.verify.build }));
+
+  /* 7b. Scaffold — the commands that create the application itself. -------
+   *
+   * `selected` is in lib.axes order, which IS the required execution order:
+   * backend-framework (`dotnet new sln`) must precede orm (`dotnet add
+   * package`) must precede mapping (`dotnet add package`). That ordering is a
+   * consequence of the interview order, so there is deliberately no dependency
+   * graph here — if a fragment ever needs to run out of axis order, fix the
+   * axis order rather than inventing a scheduler.
+   */
+
+  const scaffold = { commands: [], conventions: [], env: {} };
+  for (const frag of selected) {
+    for (const cmd of frag.scaffold?.commands ?? []) {
+      scaffold.commands.push({ ...cmd, from: frag.id });
+    }
+    for (const conv of frag.scaffold?.conventions ?? []) {
+      scaffold.conventions.push({
+        from: relative(PLUGIN_ROOT, join(frag._dir, conv.from)),
+        to: conv.to,
+        phase: conv.phase ?? 'post',
+        fragment: frag.id,
+      });
+    }
+    Object.assign(scaffold.env, frag.scaffold?.env ?? {});
+  }
 
   /* 8. Derived rollups the templates read. ------------------------------- */
 
-  // `backend` is the backend-framework namespace plus computed rollups, so
+  // `backend`/`frontend` are the framework namespaces plus computed rollups, so
   // templates say <% backend.common_dir %> rather than the hyphenated axis id.
+  //
+  // build_cmd is keyed by the OWNING axis, never by position. Taking verify[0]
+  // would hand the backend agent the frontend's build command as soon as a
+  // frontend fragment declares one.
+  const buildFor = (axisId) => verify.find((v) => v.axis === axisId)?.build ?? '';
+
   vars.backend = {
     ...(vars['backend-framework'] ?? {}),
-    build_cmd: verify[0]?.build ?? '',
-    language: selected.map((f) => f.traits?.language).find(Boolean) ?? '',
+    build_cmd: buildFor('backend-framework'),
+    language: selected
+      .filter((f) => f.axis === 'backend-framework' || f.axis === 'orm')
+      .map((f) => f.traits?.language)
+      .find(Boolean) ?? '',
+  };
+  vars.frontend = {
+    ...(vars['frontend-framework'] ?? {}),
+    build_cmd: buildFor('frontend-framework'),
+    language: 'typescript',
   };
   vars.agent = Object.fromEntries(
     agents.map((a) => [a.name.replace(/-developer$/, ''), a.vars]),
@@ -318,6 +358,28 @@ export function resolvePlan(answersDoc) {
     agent.vars = vars.agent[agent.name.replace(/-developer$/, '')];
   }
 
+  /* 10. Expand the shell-facing strings. ---------------------------------
+   *
+   * Scaffold commands and destinations are var VALUES too ("dotnet new sln
+   * --name <% project.pascal %>"), so they need the same treatment. STRICT
+   * here — no allowResidual — because an unresolved tag that reaches a shell
+   * is a mangled `dotnet` invocation, and a half-scaffolded directory is much
+   * worse to recover from than a resolve-time error.
+   */
+  for (const cmd of scaffold.commands) {
+    cmd.run = render(cmd.run, vars, `${cmd.from} scaffold.run`);
+    if (cmd.cwd) cmd.cwd = render(cmd.cwd, vars, `${cmd.from} scaffold.cwd`);
+  }
+  for (const conv of scaffold.conventions) {
+    conv.to = render(conv.to, vars, `${conv.fragment} scaffold.to`);
+  }
+  for (const [key, value] of Object.entries(scaffold.env)) {
+    scaffold.env[key] = render(value, vars, `scaffold.env.${key}`);
+  }
+  for (const v of verify) {
+    v.build = render(v.build, vars, `${v.from} verify.build`);
+  }
+
   return {
     version: 1,
     project: vars.project,
@@ -330,6 +392,7 @@ export function resolvePlan(answersDoc) {
     claude_md: claudeMd,
     hooks,
     settings: { enabledPlugins },
+    scaffold,
     verify,
   };
 }

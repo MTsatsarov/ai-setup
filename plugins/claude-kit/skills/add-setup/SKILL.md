@@ -104,5 +104,8 @@ Offer to open follow-up work for the gaps.
 
 - `--force` overwrites `.claude/` only. A sibling `settings.local.json` is never in scope.
 - Never modify application code from this command.
+- **Never run `scaffold.mjs` here.** Scaffolding creates and overwrites application code,
+  which is `new-project`'s job and only ever correct in an empty directory. This command
+  adds a payload to a repo that already has code; running the scaffold would clobber it.
 - Never hand-edit generated files to paper over a detection mismatch — fix the answer
   and regenerate.
