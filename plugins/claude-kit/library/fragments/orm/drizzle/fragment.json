@@ -68,6 +68,22 @@
     }
   },
 
+  "scaffold": {
+    "$comment": "Verified end to end: after these steps `drizzle-kit generate` produces correct SQL (audit columns, FK with ON DELETE restrict, indexes) and the app compiles against the CRUD base.",
+    "commands": [
+      { "run": "npm install --workspace apps/api drizzle-orm pg" },
+      { "run": "npm install --workspace apps/api -D drizzle-kit @types/pg" }
+    ],
+    "conventions": [
+      { "from": "conventions/files/drizzle.config.ts", "to": "apps/api/drizzle.config.ts" },
+      { "from": "conventions/files/schema/_shared.ts", "to": "<% orm.schema_dir %>/_shared.ts" },
+      { "from": "conventions/files/schema/index.ts", "to": "<% orm.schema_dir %>/index.ts" },
+      { "from": "conventions/files/db/drizzle.module.ts", "to": "<% backend.common_dir %>/db/drizzle.module.ts" },
+      { "from": "conventions/files/crud/crud.service.ts", "to": "<% backend.common_dir %>/crud/crud.service.ts" }
+    ],
+    "env": { "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/<% project.slug %>" }
+  },
+
   "verify": { "build": "npm --workspace apps/api run build" },
   "settings": { "enabledPlugins": ["typescript-lsp@claude-plugins-official"] }
 }

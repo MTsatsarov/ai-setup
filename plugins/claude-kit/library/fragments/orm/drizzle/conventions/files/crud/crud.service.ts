@@ -1,10 +1,3 @@
-## Reusable CRUD base
-
-Put shared CRUD plumbing in `<% backend.common_dir %>/crud/`. The base service centralizes
-soft-delete-aware Drizzle access so no feature service re-implements it.
-
-```typescript
-// <% backend.common_dir %>/crud/crud.service.ts
 import { NotFoundException } from '@nestjs/common';
 import { and, eq, SQL } from 'drizzle-orm';
 import { PgColumn, PgTable } from 'drizzle-orm/pg-core';
@@ -47,8 +40,6 @@ export abstract class CrudService<TTable extends CrudTable> {
   }
 
   async create(data: TTable['$inferInsert']): Promise<TTable['$inferSelect']> {
-    // insert().returning() widens to `any[] | QueryResult<never>`; the assertion
-    // narrows it back rather than letting the union leak into the public type.
     const rows = (await this.db.insert(this.t).values(data).returning()) as TTable['$inferSelect'][];
     return rows[0];
   }
@@ -76,10 +67,3 @@ export abstract class CrudService<TTable extends CrudTable> {
       .where(and(this.notDeleted, eq(this.table.id, id)));
   }
 }
-```
-
-**Do not** write `const [row] = await ...` against these builders, and do not spread
-`as any` across each call. Both compile-fail on current `drizzle-orm`: destructuring hits
-`Type '... | QueryResult<never>' must have a '[Symbol.iterator]()' method`, and a
-per-call `as any` discards the inferred row type. Index with `rows[0]` and keep the cast
-in the `t` accessor.

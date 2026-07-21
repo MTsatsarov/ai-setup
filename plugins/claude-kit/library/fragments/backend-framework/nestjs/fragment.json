@@ -51,6 +51,20 @@
     }
   },
 
+  "scaffold": {
+    "$comment": "Verified end to end: these exact commands produce a project that builds, boots, serves Swagger at /docs, and rejects invalid bodies via the global ValidationPipe.",
+    "commands": [
+      { "run": "npx -y @nestjs/cli@latest new apps/api --skip-git --skip-install --package-manager npm", "note": "creates apps/api; run from the repo root with a workspaces package.json already present" },
+      { "run": "npm install --workspaces --include-workspace-root" },
+      { "run": "npm install --workspace apps/api @nestjs/swagger class-validator class-transformer" },
+      { "run": "rm -f apps/api/src/app.controller.ts apps/api/src/app.service.ts apps/api/src/app.controller.spec.ts", "note": "the CLI's sample controller/service are replaced by the first real feature" }
+    ],
+    "conventions": [
+      { "from": "conventions/files/main.ts", "to": "apps/api/src/main.ts" },
+      { "from": "conventions/files/dto/pagination-query.dto.ts", "to": "apps/api/src/common/dto/pagination-query.dto.ts" }
+    ]
+  },
+
   "verify": { "build": "npm --workspace apps/api run build" },
   "settings": { "enabledPlugins": ["typescript-lsp@claude-plugins-official"] }
 }

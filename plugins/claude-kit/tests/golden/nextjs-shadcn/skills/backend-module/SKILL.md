@@ -46,62 +46,88 @@ export class DrizzleModule {}
 ## Reusable CRUD base
 
 Put shared CRUD plumbing in `apps/api/src/common/crud/`. The base service centralizes
-soft-delete-aware Drizzle access; the base controller centralizes route shape and Swagger docs.
+soft-delete-aware Drizzle access so no feature service re-implements it.
 
 ```typescript
 // apps/api/src/common/crud/crud.service.ts
 import { NotFoundException } from '@nestjs/common';
 import { and, eq, SQL } from 'drizzle-orm';
+import { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import type { Database } from '../db/drizzle.module';
 
-// TTable is any pgTable carrying id / isDeleted.
-export abstract class CrudService<TTable extends { id: any; isDeleted: any }> {
+// Any pgTable carrying the id + isDeleted columns this base relies on.
+export type CrudTable = PgTable & { id: PgColumn; isDeleted: PgColumn };
+
+export abstract class CrudService<TTable extends CrudTable> {
   protected abstract readonly table: TTable;
 
   constructor(protected readonly db: Database) {}
 
-  findAll(extra?: SQL) {
-    return this.db.select().from(this.table as any).where(and(eq(this.table.isDeleted, false), extra));
+  // Drizzle's query-builder types are conditional on a *concrete* table, so
+  // they cannot resolve against an unresolved generic. The cast is confined to
+  // this accessor; every public signature below stays typed via $inferSelect /
+  // $inferInsert, so callers lose nothing.
+  private get t(): any {
+    return this.table;
   }
 
-  async findOne(id: string) {
-    const [row] = await this.db
+  private get notDeleted(): SQL | undefined {
+    return eq(this.table.isDeleted, false);
+  }
+
+  findAll(extra?: SQL): Promise<TTable['$inferSelect'][]> {
+    return this.db.select().from(this.t).where(and(this.notDeleted, extra));
+  }
+
+  async findOne(id: string): Promise<TTable['$inferSelect']> {
+    const rows: TTable['$inferSelect'][] = await this.db
       .select()
-      .from(this.table as any)
-      .where(and(eq(this.table.isDeleted, false), eq(this.table.id, id)))
+      .from(this.t)
+      .where(and(this.notDeleted, eq(this.table.id, id)))
       .limit(1);
-    if (!row) {
+    if (!rows[0]) {
       throw new NotFoundException(`Not found: ${id}`);
     }
-    return row;
+    return rows[0];
   }
 
-  async create(data: object) {
-    const [row] = await this.db.insert(this.table as any).values(data).returning();
-    return row;
+  async create(data: TTable['$inferInsert']): Promise<TTable['$inferSelect']> {
+    // insert().returning() widens to `any[] | QueryResult<never>`; the assertion
+    // narrows it back rather than letting the union leak into the public type.
+    const rows = (await this.db.insert(this.t).values(data).returning()) as TTable['$inferSelect'][];
+    return rows[0];
   }
 
-  async update(id: string, data: object) {
-    const [row] = await this.db
-      .update(this.table as any)
+  async update(
+    id: string,
+    data: Partial<TTable['$inferInsert']>,
+  ): Promise<TTable['$inferSelect']> {
+    const rows: TTable['$inferSelect'][] = await this.db
+      .update(this.t)
       .set(data)
-      .where(and(eq(this.table.isDeleted, false), eq(this.table.id, id)))
+      .where(and(this.notDeleted, eq(this.table.id, id)))
       .returning();
-    if (!row) {
+    if (!rows[0]) {
       throw new NotFoundException(`Not found: ${id}`);
     }
-    return row;
+    return rows[0];
   }
 
   // Soft delete — sets isDeleted rather than removing the row.
-  remove(id: string) {
-    return this.db
-      .update(this.table as any)
+  async remove(id: string): Promise<void> {
+    await this.db
+      .update(this.t)
       .set({ isDeleted: true })
-      .where(and(eq(this.table.isDeleted, false), eq(this.table.id, id)));
+      .where(and(this.notDeleted, eq(this.table.id, id)));
   }
 }
 ```
+
+**Do not** write `const [row] = await ...` against these builders, and do not spread
+`as any` across each call. Both compile-fail on current `drizzle-orm`: destructuring hits
+`Type '... | QueryResult<never>' must have a '[Symbol.iterator]()' method`, and a
+per-call `as any` discards the inferred row type. Index with `rows[0]` and keep the cast
+in the `t` accessor.
 
 ## Service
 
