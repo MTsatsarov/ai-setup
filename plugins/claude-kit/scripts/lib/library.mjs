@@ -1,8 +1,29 @@
 /** Loading and validating the fragment library. No rendering happens here. */
 
-import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, statSync, realpathSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+/**
+ * Is this module the entry point?
+ *
+ * The obvious `import.meta.url === \`file://${process.argv[1]}\`` is WRONG and
+ * fails silently: import.meta.url resolves symlinks, process.argv[1] does not.
+ * On macOS /tmp and /var are symlinks to /private/*, so any plugin installed
+ * under such a path would run main() never, exit 0, and write no files — a
+ * silent no-op, the worst possible failure mode. Compare real paths instead.
+ */
+export function isMainModule(importMetaUrl) {
+  if (!process.argv[1]) return false;
+  const real = (p) => {
+    try {
+      return realpathSync(p);
+    } catch {
+      return p;
+    }
+  };
+  return real(fileURLToPath(importMetaUrl)) === real(process.argv[1]);
+}
 
 export const PLUGIN_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 export const LIBRARY_ROOT = join(PLUGIN_ROOT, 'library');

@@ -68,6 +68,24 @@ for golden in tests/golden/*/; do
   fi
 done
 
+
+# --- 5. the scripts must work from a symlinked install path -------------------
+# import.meta.url resolves symlinks, process.argv[1] does not. A naive main-module
+# guard makes both scripts silently no-op (exit 0, no files) when the plugin lives
+# under /tmp or /var on macOS. Regression test for exactly that.
+step "symlinked install path"
+FAKE=$(mktemp -d)/plugins
+mkdir -p "$FAKE"
+cp -R . "$FAKE/claude-kit" 2>/dev/null
+SB=$(mktemp -d)
+mkdir -p "$SB/.claude-kit"
+cp tests/fixtures/nextjs-shadcn.answers.json "$SB/.claude-kit/answers.json"
+node "$FAKE/claude-kit/scripts/resolve.mjs" --answers "$SB/.claude-kit/answers.json" --out "$SB/.claude-kit/plan.json" --quiet
+node "$FAKE/claude-kit/scripts/render.mjs" --plan "$SB/.claude-kit/plan.json" --out "$SB/.claude" >/dev/null
+COUNT=$(find "$SB/.claude" -type f 2>/dev/null | wc -l | tr -d ' ')
+if [ "$COUNT" -gt 0 ]; then pass "generated $COUNT files from a copied install"; else fail "silent no-op — main-module guard is broken"; fi
+rm -rf "$FAKE" "$SB"
+
 printf '\n'
 [ "$FAILED" -eq 0 ] && printf '\033[32mall green\033[0m\n' || printf '\033[31mfailures above\033[0m\n'
 exit "$FAILED"

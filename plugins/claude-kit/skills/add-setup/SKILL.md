@@ -13,6 +13,17 @@ rather than chosen from scratch. This never touches application code.
 ## Phase 0 — Preflight
 
 ```bash
+KIT="${CLAUDE_PLUGIN_ROOT:-}"
+[ -f "$KIT/scripts/resolve.mjs" ] || KIT=$(find ~/.claude/plugins/marketplaces -maxdepth 3 -type d -name claude-kit 2>/dev/null | head -1)
+[ -f "$KIT/scripts/resolve.mjs" ] || { echo "cannot locate claude-kit — is the plugin installed?"; exit 1; }
+echo "KIT=$KIT"
+```
+
+Use the resulting absolute path literally in every later command — each Bash call is a
+fresh shell, so an exported variable will not survive.
+
+
+```bash
 pwd && ls -A && ls -A .claude 2>/dev/null
 ```
 
@@ -46,7 +57,7 @@ git log --oneline -30 2>/dev/null
 Check detected values against what the library actually supports:
 
 ```bash
-cat "${CLAUDE_PLUGIN_ROOT}/library/axes.json"
+cat "$KIT/library/axes.json"
 ```
 
 ## Phase 2 — Confirm every detection
@@ -68,16 +79,16 @@ Identical to `/claude-kit:new-project` phases 2, 3, 4 and 6:
 ```bash
 mkdir -p .claude-kit
 # write .claude-kit/answers.json from the confirmed answers
-node "${CLAUDE_PLUGIN_ROOT}/scripts/resolve.mjs" \
+node "$KIT/scripts/resolve.mjs" \
   --answers .claude-kit/answers.json --out .claude-kit/plan.json
-node "${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs" \
+node "$KIT/scripts/render.mjs" \
   --plan .claude-kit/plan.json --out .claude --clean
 ```
 
 Preview first when overwriting, so the user sees the blast radius before it happens:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs" --plan .claude-kit/plan.json --dry-run
+node "$KIT/scripts/render.mjs" --plan .claude-kit/plan.json --dry-run
 ```
 
 ## Phase 4 — Reconcile with reality

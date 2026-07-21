@@ -19,6 +19,7 @@ import {
   isAvailable,
   impliedAnswers,
   readJson,
+  isMainModule,
   PLUGIN_ROOT,
 } from './lib/library.mjs';
 
@@ -336,6 +337,6 @@ function main(argv) {
   return 0;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   process.exit(main(process.argv.slice(2)));
 }

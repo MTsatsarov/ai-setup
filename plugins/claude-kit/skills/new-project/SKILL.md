@@ -13,11 +13,21 @@ your job is to run the interview and drive the scripts.
 
 `$ARGUMENTS` may contain the project name.
 
-## Phase 0 — Preflight
+## Phase 0 — Locate the kit, then preflight
+
+Resolve the plugin root **once** and use the resulting absolute path literally in every
+later command — each Bash call is a fresh shell, so an exported variable will not survive.
 
 ```bash
+KIT="${CLAUDE_PLUGIN_ROOT:-}"
+[ -f "$KIT/scripts/resolve.mjs" ] || KIT=$(find ~/.claude/plugins/marketplaces -maxdepth 3 -type d -name claude-kit 2>/dev/null | head -1)
+[ -f "$KIT/scripts/resolve.mjs" ] || { echo "cannot locate claude-kit — is the plugin installed?"; exit 1; }
+echo "KIT=$KIT" && node --version
 pwd && ls -A
 ```
+
+If that fails, stop and say so plainly rather than guessing a path. The user can pass one
+explicitly (`/claude-kit:new-project --kit /path/to/plugins/claude-kit`); honour it if given.
 
 - If the directory already contains a `.claude/` payload, **stop** and tell the user to
   use `/claude-kit:add-setup --force` instead — that command is built for existing repos.
@@ -30,8 +40,8 @@ Read the library's question set. Never invent axes or options — the library is
 only source of truth for what is supported:
 
 ```bash
-cat "${CLAUDE_PLUGIN_ROOT}/library/axes.json"
-for f in "${CLAUDE_PLUGIN_ROOT}"/library/fragments/*/*/fragment.json; do
+cat "$KIT/library/axes.json"
+for f in "$KIT"/library/fragments/*/*/fragment.json; do
   node -e 'const d=require(process.argv[1]);console.log([d.id,d.label,d.description??"",JSON.stringify(d.requires??{}),JSON.stringify(d.implies??{})].join("\t"))' "$f"
 done
 ```
@@ -79,7 +89,7 @@ Include every axis you asked **and** every axis that was auto-selected.
 ## Phase 3 — Resolve
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/resolve.mjs" \
+node "$KIT/scripts/resolve.mjs" \
   --answers .claude-kit/answers.json --out .claude-kit/plan.json
 ```
 
@@ -105,7 +115,7 @@ and that the generated skills describe the conventions that code should follow.
 ## Phase 6 — Generate
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/render.mjs" \
+node "$KIT/scripts/render.mjs" \
   --plan .claude-kit/plan.json --out .claude --clean
 ```
 

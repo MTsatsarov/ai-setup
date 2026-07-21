@@ -13,7 +13,7 @@ import { readFileSync, writeFileSync, mkdirSync, chmodSync, rmSync, existsSync }
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { render } from './lib/erb.mjs';
-import { PLUGIN_ROOT, LIBRARY_ROOT, readJson } from './lib/library.mjs';
+import { PLUGIN_ROOT, LIBRARY_ROOT, readJson, isMainModule } from './lib/library.mjs';
 
 const readTpl = (rel) => readFileSync(join(PLUGIN_ROOT, rel), 'utf8');
 const readBase = (rel) => readFileSync(join(LIBRARY_ROOT, rel), 'utf8');
@@ -191,6 +191,6 @@ function main(argv) {
   return 0;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   process.exit(main(process.argv.slice(2)));
 }
