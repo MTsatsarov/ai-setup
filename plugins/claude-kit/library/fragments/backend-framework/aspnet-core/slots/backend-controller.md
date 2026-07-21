@@ -11,7 +11,7 @@ HTTP response. That is the whole job. If an action contains an `if` that is not 
 logic belongs in the service.
 
 A controller lives beside the service it calls, under
-`src/DemoCRM.Api/Features/<Feature>/<Feature>Controller.cs`.
+`<% backend.src_dir %>/Features/<Feature>/<Feature>Controller.cs`.
 
 ## URL Convention
 - `[Route("entity-names")]` → `/entity-names` — plural, kebab-case, no `api/` prefix
@@ -23,7 +23,7 @@ A controller lives beside the service it calls, under
 ## The pattern
 
 ```csharp
-// src/DemoCRM.Api/Features/EntityNames/EntityNamesController.cs
+// <% backend.src_dir %>/Features/EntityNames/EntityNamesController.cs
 [ApiController]
 [Route("entity-names")]
 [Produces("application/json")]

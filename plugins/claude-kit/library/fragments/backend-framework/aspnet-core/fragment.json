@@ -23,11 +23,8 @@
   "provides": {
     "backend-models": "slots/backend-models.md",
     "backend-service": "slots/backend-service.md",
+    "backend-controller": "slots/backend-controller.md",
     "backend-code-quality": "slots/backend-code-quality.md"
-  },
-
-  "emit_as": {
-    "backend-service": "backend-controller"
   },
 
   "contributes": {

@@ -30,6 +30,13 @@
       "$comment": "The framework owns the controller/service/module shape; the ORM supplies the data-access blocks via #provider and #crud_base. That split is what lets a new ORM drop in without forking the framework body.",
       "contributor_order": ["orm"]
     },
+    "backend-controller": {
+      "owner_axis": "backend-framework",
+      "group": "Backend",
+      "agent": "backend-developer",
+      "composite": false,
+      "$comment": "The HTTP layer, for frameworks that separate it from the application service. NestJS folds controller, service and module into one backend-module skill and provides nothing here; ASP.NET Core splits them, because 'controllers stay thin' is only teachable when the two have separate homes."
+    },
     "backend-code-quality": {
       "owner_axis": "backend-framework",
       "group": "Backend",

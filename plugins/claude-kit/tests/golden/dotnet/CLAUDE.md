@@ -29,6 +29,7 @@
 - `backend-migrations`
 - `backend-models`
 - `backend-permissions`
+- `backend-service`
 
 
 <!--

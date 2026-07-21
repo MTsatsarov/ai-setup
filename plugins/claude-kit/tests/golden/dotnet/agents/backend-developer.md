@@ -4,7 +4,7 @@ description: C# backend only — ASP.NET Core controllers, scoped services, EF C
 tools: Read, Write, Edit, Bash, Glob, Grep, LSP
 model: sonnet
 permissionMode: acceptEdits
-skills: backend-code-quality, backend-controller, backend-entities, backend-migrations, backend-models, backend-permissions
+skills: backend-code-quality, backend-controller, backend-entities, backend-migrations, backend-models, backend-permissions, backend-service
 ---
 
 You are a Senior Backend Developer for the Demo CRM project.
