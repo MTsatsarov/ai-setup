@@ -1,0 +1,1 @@
+- **ORM:** <% orm.name %>, PostgreSQL — entities beside their feature, EF configurations at `<% orm.config_dir %>`, generated migrations at `<% orm.migrations_dir %>` (never hand-edited)

@@ -1,0 +1,1 @@
+- **Auth:** <% auth.name %> — server-side session, CSRF protection required on state-changing requests

@@ -3,68 +3,86 @@
   "id": "backend-framework/nestjs",
   "axis": "backend-framework",
   "label": "NestJS (TypeScript)",
-  "description": "Modular TypeScript backend — @Module/@Controller/@Injectable triad, DI by token, class-validator DTOs, Swagger from decorators.",
-
-  "traits": { "language": "typescript", "runtime": "node" },
-
+  "description": "Modular TypeScript backend \u2014 @Module/@Controller/@Injectable triad, DI by token, class-validator DTOs, Swagger from decorators.",
+  "traits": {
+    "language": "typescript",
+    "runtime": "node"
+  },
   "vars": {
     "name": "NestJS",
     "src_dir": "apps/api/src",
     "app_dir": "apps/api",
     "common_dir": "apps/api/src/common",
     "claude_rules": [
-      "Backend and frontend are **separate concerns** — never mix them in a single agent",
-      "No business logic in controllers — controllers delegate to injectable services",
+      "Backend and frontend are **separate concerns** \u2014 never mix them in a single agent",
+      "No business logic in controllers \u2014 controllers delegate to injectable services",
       "Request DTOs carry class-validator decorators and pass through the global `ValidationPipe`"
     ]
   },
-
   "provides": {
     "backend-models": "slots/backend-models.md",
     "backend-service": "slots/backend-service.md",
     "backend-code-quality": "slots/backend-code-quality.md"
   },
-
   "emit_as": {
     "backend-service": "backend-module"
   },
-
   "contributes": {
-    "claude-md#stack": "sections/claude-stack.md"
+    "claude-md#stack": "sections/claude-stack.md",
+    "backend-permissions#enforcement": "sections/permissions-enforcement.md"
   },
-
   "agent": {
     "backend-developer": {
-      "description": "TypeScript backend only — NestJS modules/controllers/services, DTOs, guards. Never touches frontend code.",
+      "description": "TypeScript backend only \u2014 NestJS modules/controllers/services, DTOs, guards. Never touches frontend code.",
       "lsp_trace": "a DTO or service method to its implementation",
-      "impl_order": "schema (+ migration) → module → service → controller",
+      "impl_order": "schema (+ migration) \u2192 module \u2192 service \u2192 controller",
       "context": [
         "Backend source lives in `apps/api/src`, one folder per feature",
         "Features are wired as `@Module`s imported by `AppModule`",
         "DTOs live in the feature's `dto/` folder and are validated by the global `ValidationPipe`"
       ],
       "rules": [
-        "Never put business logic in a controller — delegate to an injectable service",
+        "Never put business logic in a controller \u2014 delegate to an injectable service",
         "Inject providers by token via DI; never `new` a dependency inside a class",
         "Never touch frontend code"
       ]
     }
   },
-
   "scaffold": {
     "$comment": "Verified end to end: these exact commands produce a project that builds, boots, serves Swagger at /docs, and rejects invalid bodies via the global ValidationPipe.",
     "commands": [
-      { "run": "npx -y @nestjs/cli@latest new apps/api --skip-git --skip-install --package-manager npm", "note": "creates apps/api; run from the repo root with a workspaces package.json already present" },
-      { "run": "npm install --workspaces --include-workspace-root" },
-      { "run": "npm install --workspace apps/api @nestjs/swagger class-validator class-transformer" },
-      { "run": "rm -f apps/api/src/app.controller.ts apps/api/src/app.service.ts apps/api/src/app.controller.spec.ts", "note": "the CLI's sample controller/service are replaced by the first real feature" }
+      {
+        "run": "npx -y @nestjs/cli@latest new apps/api --skip-git --skip-install --package-manager npm",
+        "note": "creates apps/api; run from the repo root with a workspaces package.json already present"
+      },
+      {
+        "run": "npm install --workspaces --include-workspace-root"
+      },
+      {
+        "run": "npm install --workspace apps/api @nestjs/swagger class-validator class-transformer"
+      },
+      {
+        "run": "rm -f apps/api/src/app.controller.ts apps/api/src/app.service.ts apps/api/src/app.controller.spec.ts",
+        "note": "the CLI's sample controller/service are replaced by the first real feature"
+      }
     ],
     "conventions": [
-      { "from": "conventions/files/main.ts", "to": "apps/api/src/main.ts" },
-      { "from": "conventions/files/dto/pagination-query.dto.ts", "to": "apps/api/src/common/dto/pagination-query.dto.ts" }
+      {
+        "from": "conventions/files/main.ts",
+        "to": "apps/api/src/main.ts"
+      },
+      {
+        "from": "conventions/files/dto/pagination-query.dto.ts",
+        "to": "apps/api/src/common/dto/pagination-query.dto.ts"
+      }
     ]
   },
-
-  "verify": { "build": "npm --workspace apps/api run build" },
-  "settings": { "enabledPlugins": ["typescript-lsp@claude-plugins-official"] }
+  "verify": {
+    "build": "npm --workspace apps/api run build"
+  },
+  "settings": {
+    "enabledPlugins": [
+      "typescript-lsp@claude-plugins-official"
+    ]
+  }
 }

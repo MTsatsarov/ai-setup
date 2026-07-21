@@ -1,0 +1,1 @@
+- **Mapping:** <% mapping.name %> — one `Profile` per feature, reads projected with `ProjectTo`

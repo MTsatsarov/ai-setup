@@ -11,8 +11,9 @@
     "orm": "drizzle",
     "frontend-framework": "nextjs-app",
     "ui-kit": "shadcn",
-    "auth": "session-jwt",
-    "authz": "none",
-    "tracker": "clickup"
+    "auth": "jwt",
+    "authz": "rbac",
+    "tracker": "clickup",
+    "mapping": "manual"
   }
 }

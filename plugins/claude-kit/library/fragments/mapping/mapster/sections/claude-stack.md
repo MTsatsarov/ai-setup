@@ -1,0 +1,1 @@
+- **Mapping:** <% mapping.name %> — one `IRegister` per feature, reads projected with `ProjectToType`

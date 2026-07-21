@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "auth/jwt",
+  "axis": "auth",
+  "label": "JWT bearer tokens",
+  "description": "Stateless bearer tokens sent in the Authorization header. Suits SPAs and mobile clients; no server-side session store.",
+  "vars": {
+    "name": "JWT bearer tokens",
+    "claude_rules": ["Endpoints are authenticated by JWT bearer token; the fallback policy denies anonymous access unless an endpoint opts out with `[AllowAnonymous]`"]
+  },
+  "contributes": { "claude-md#stack": "sections/claude-stack.md" }
+}

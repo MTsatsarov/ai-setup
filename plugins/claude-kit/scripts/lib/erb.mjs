@@ -184,19 +184,24 @@ function evaluate(node, scopes, origin, out) {
 }
 
 /**
- * @param {string} src     template source
- * @param {object} data    root variable namespace
- * @param {string} origin  file path, used in error messages
+ * @param {string}  src     template source
+ * @param {object}  data    root variable namespace
+ * @param {string}  origin  file path, used in error messages
+ * @param {object} [opts]
+ * @param {boolean} [opts.allowResidual]  skip the surviving-tag backstop. Only
+ *   for the variable-expansion passes in resolve.mjs, where an intermediate
+ *   result legitimately still holds a tag that a later pass will resolve.
+ *   Never set it when rendering a file that is about to be written.
  * @returns {string}
  */
-export function render(src, data, origin = '<template>') {
+export function render(src, data, origin = '<template>', opts = {}) {
   const ast = parse(tokenize(src), origin);
   const out = [];
   evaluate(ast, [{ data }], origin, out);
   const result = out.join('');
 
   // Backstop: a var whose *value* contained a tag would slip past the parser.
-  if (result.includes('<%')) {
+  if (!opts.allowResidual && result.includes('<%')) {
     const stray = /<%[\s\S]{0,40}/.exec(result)[0].replace(/\n[\s\S]*/, '');
     throw new Error(`${origin}: unrendered template tag survived in output near "${stray}"`);
   }

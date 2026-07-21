@@ -1,0 +1,74 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "backend-framework/aspnet-core",
+  "axis": "backend-framework",
+  "label": "ASP.NET Core Web API (C#)",
+  "description": "Controller-based Web API — ControllerBase + attribute routing, a scoped service layer, DI via the built-in container, DataAnnotations/FluentValidation on request models, Swagger from the OpenAPI package.",
+
+  "traits": { "language": "csharp", "runtime": "dotnet" },
+
+  "vars": {
+    "name": "ASP.NET Core",
+    "src_dir": "src/<% project.pascal %>.Api",
+    "app_dir": "src/<% project.pascal %>.Api",
+    "common_dir": "src/<% project.pascal %>.Api/Common",
+    "solution": "<% project.pascal %>.sln",
+    "claude_rules": [
+      "Backend and frontend are **separate concerns** — never mix them in a single agent",
+      "No business logic in controllers — controllers delegate to a scoped service",
+      "Request models are validated before the service is reached; services assume valid input"
+    ]
+  },
+
+  "provides": {
+    "backend-models": "slots/backend-models.md",
+    "backend-service": "slots/backend-service.md",
+    "backend-code-quality": "slots/backend-code-quality.md"
+  },
+
+  "emit_as": {
+    "backend-service": "backend-controller"
+  },
+
+  "contributes": {
+    "claude-md#stack": "sections/claude-stack.md",
+    "backend-permissions#enforcement": "sections/permissions-enforcement.md"
+  },
+
+  "agent": {
+    "backend-developer": {
+      "description": "C# backend only — ASP.NET Core controllers, scoped services, EF Core entities and migrations, DTOs. Never touches frontend code.",
+      "lsp_trace": "a DTO or service method to its implementation",
+      "impl_order": "entity (+ migration) → DTOs → service → controller → DI registration",
+      "context": [
+        "Backend source lives in `<% backend.src_dir %>`, one folder per feature",
+        "Controllers are thin: they validate, delegate to a scoped service, and shape the response",
+        "Services are registered in `Program.cs` (or a `ServiceCollectionExtensions`) and injected by interface"
+      ],
+      "rules": [
+        "Never put business logic in a controller — delegate to a scoped service",
+        "Inject dependencies by interface through the constructor; never `new` a dependency",
+        "Every public async method returns `Task`/`Task<T>` and is awaited — no `.Result` or `.Wait()`",
+        "Never touch frontend code"
+      ]
+    }
+  },
+
+  "scaffold": {
+    "$comment": "Verified against the .NET 10 SDK. Note `dotnet new sln` now emits a .slnx (XML) file, not .sln — so the verify command must let dotnet auto-discover the solution rather than naming a .sln path.",
+    "commands": [
+      { "run": "dotnet new sln --name <% project.pascal %>" },
+      { "run": "dotnet new webapi --use-controllers --name <% project.pascal %>.Api --output src/<% project.pascal %>.Api" },
+      { "run": "dotnet sln add src/<% project.pascal %>.Api/<% project.pascal %>.Api.csproj" },
+      { "run": "dotnet add src/<% project.pascal %>.Api package Swashbuckle.AspNetCore" },
+      { "run": "rm -f src/<% project.pascal %>.Api/WeatherForecast.cs src/<% project.pascal %>.Api/Controllers/WeatherForecastController.cs", "note": "the template's sample endpoint is replaced by the first real feature" }
+    ],
+    "conventions": [
+      { "from": "conventions/files/AuditedEntity.cs", "to": "<% backend.common_dir %>/Entities/AuditedEntity.cs" },
+      { "from": "conventions/files/PaginationQuery.cs", "to": "<% backend.common_dir %>/Models/PaginationQuery.cs" }
+    ]
+  },
+
+  "verify": { "build": "dotnet build" },
+  "settings": { "enabledPlugins": ["csharp-lsp@claude-plugins-official"] }
+}

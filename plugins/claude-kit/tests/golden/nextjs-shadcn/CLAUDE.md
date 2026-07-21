@@ -3,6 +3,9 @@
 ### Tech Stack
 - **Backend:** NestJS (TypeScript) — source at `apps/api/src`, one folder per feature
 - **ORM:** Drizzle ORM, PostgreSQL — schema at `apps/api/src/db/schema`, generated migrations at `apps/api/drizzle` (never hand-edited)
+- **Auth:** JWT bearer tokens — stateless, sent in the `Authorization` header
+- **Authorization:** role-based (RBAC) — deny-by-default, roles checked declaratively at the endpoint
+- **Mapping:** manual mapping — responses shaped by an explicit projection, computed fields via a pure mapper
 - **Frontend:** Next.js (App Router) — source at `apps/web/src`, styled with shadcn/ui + Tailwind
 
 ### Key Rules
@@ -11,6 +14,8 @@
 - Request DTOs carry class-validator decorators and pass through the global `ValidationPipe`
 - Every read excludes soft-deleted rows — compose `eq(table.isDeleted, false)` into the `where`
 - Never hand-edit files under `apps/api/drizzle/` — change the schema and run `npx drizzle-kit generate`
+- Endpoints are authenticated by JWT bearer token; the fallback policy denies anonymous access unless an endpoint opts out with `[AllowAnonymous]`
+- Authorization is role-based and deny-by-default — a new endpoint is closed unless it explicitly opts out
 
 ### Agents
 - `backend-developer` — TypeScript backend only — NestJS modules/controllers/services, DTOs, guards. Never touches frontend code.
@@ -23,6 +28,7 @@
 - `backend-migrations`
 - `backend-models`
 - `backend-module`
+- `backend-permissions`
 
 
 <!--

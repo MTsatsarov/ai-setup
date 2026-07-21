@@ -11,6 +11,7 @@
  */
 
 import { writeFileSync, mkdirSync } from 'node:fs';
+import { render } from './lib/erb.mjs';
 import { join, dirname, relative } from 'node:path';
 import {
   loadLibrary,
@@ -279,6 +280,43 @@ export function resolvePlan(answersDoc) {
   // altitudes, so both read one list rather than drifting apart.
   vars.rules = { all: selected.flatMap((f) => f.vars?.claude_rules ?? []) };
   vars.settings = { enabledPlugins };
+
+  /* 9. Expand variables that themselves interpolate other variables. ------ */
+  //
+  // A .NET fragment's src_dir is genuinely "src/<% project.pascal %>.Api", and
+  // an agent context line references "<% backend.src_dir %>". Both are var
+  // VALUES, which no template pass would otherwise render — the tag would
+  // survive into the output and only the render backstop would catch it.
+  //
+  // Runs last, over the whole tree, so a var may reference any namespace
+  // regardless of the order things were built. Repeats until stable because a
+  // value may expand into another reference; three passes is far more than any
+  // real chain and bounds a cycle.
+  const expandTree = (node, where, scope) => {
+    if (typeof node === 'string') return render(node, scope, where, { allowResidual: true });
+    if (Array.isArray(node)) return node.map((v, i) => expandTree(v, `${where}[${i}]`, scope));
+    if (node && typeof node === 'object') {
+      return Object.fromEntries(
+        Object.entries(node).map(([k, v]) => [k, expandTree(v, `${where}.${k}`, scope)]),
+      );
+    }
+    return node;
+  };
+
+  let expanded = vars;
+  for (let pass = 0; pass < 3; pass++) {
+    const next = expandTree(expanded, 'vars', expanded);
+    if (JSON.stringify(next) === JSON.stringify(expanded)) break;
+    expanded = next;
+  }
+  if (JSON.stringify(expandTree(expanded, 'vars', expanded)) !== JSON.stringify(expanded)) {
+    fail('Variable expansion did not converge — a var likely references itself.');
+  }
+  Object.assign(vars, expanded);
+  // agents[].vars is the same data the template reads via vars.agent.*
+  for (const agent of agents) {
+    agent.vars = vars.agent[agent.name.replace(/-developer$/, '')];
+  }
 
   return {
     version: 1,

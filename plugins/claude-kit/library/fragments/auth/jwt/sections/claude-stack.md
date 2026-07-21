@@ -1,0 +1,1 @@
+- **Auth:** <% auth.name %> — stateless, sent in the `Authorization` header

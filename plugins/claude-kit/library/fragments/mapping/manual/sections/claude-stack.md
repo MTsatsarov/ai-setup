@@ -1,0 +1,1 @@
+- **Mapping:** <% mapping.name %> — responses shaped by an explicit projection, computed fields via a pure mapper

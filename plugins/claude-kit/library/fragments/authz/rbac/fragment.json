@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "authz/rbac",
+  "axis": "authz",
+  "label": "Role-based access control (RBAC)",
+  "description": "Roles carried as claims and checked declaratively at the endpoint. Adds a backend-permissions skill covering role constants, deny-by-default, and where to enforce.",
+  "vars": {
+    "name": "role-based (RBAC)",
+    "claude_rules": ["Authorization is role-based and deny-by-default — a new endpoint is closed unless it explicitly opts out"],
+    "quality_checks": ["Every new endpoint has an explicit authorization decision — inherited, narrowed, or deliberately `[AllowAnonymous]`"]
+  },
+  "provides": { "backend-permissions": "slots/backend-permissions.md" },
+  "contributes": {
+    "claude-md#stack": "sections/claude-stack.md",
+    "backend-code-quality": "sections/code-quality-tail.md"
+  },
+  "agent": {
+    "backend-developer": {
+      "context": ["Authorization is role-based; role constants live in one file and are referenced, never typed as string literals"],
+      "rules": ["Every new endpoint gets an explicit authorization decision — never leave it to the default by accident"]
+    }
+  }
+}

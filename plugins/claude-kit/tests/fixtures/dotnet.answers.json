@@ -1,0 +1,9 @@
+{
+  "$comment": "ASP.NET Core + EF Core + AutoMapper + RBAC. Mirrors the reference project verified under the .NET 10 SDK.",
+  "project": { "name": "Demo CRM", "notification_title": "demo-crm" },
+  "answers": {
+    "backend-framework": "aspnet-core", "orm": "efcore",
+    "auth": "jwt", "authz": "rbac", "mapping": "automapper",
+    "frontend-framework": "angular", "ui-kit": "primeng", "tracker": "jira"
+  }
+}

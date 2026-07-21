@@ -1,75 +1,62 @@
 {
-  "$comment": "The interview. Axes are asked in array order. An axis is SKIPPED and auto-selected when an earlier answer's 'implies' pins it, or when 'requires' filters its options down to exactly one. Option labels/descriptions live in each fragment.json, not here. Every option listed here MUST have a fragment directory — this file declares what claude-kit actually supports, so abp-dotnet/efcore appear only once their fragments are authored (M2).",
+  "$comment": "The interview. Axes are asked in array order. An axis is SKIPPED and auto-selected when an earlier answer's 'implies' pins it, or when 'requires' filters its options down to exactly one. Option labels/descriptions live in each fragment.json, not here. Every option listed here MUST have a fragment directory — this file declares what claude-kit actually supports.",
+
   "axes": [
     {
       "id": "backend-framework",
       "header": "Backend",
       "question": "Which backend framework?",
       "required": true,
-      "options": [
-        "nestjs"
-      ]
+      "options": ["nestjs", "aspnet-core"]
     },
     {
       "id": "orm",
       "header": "ORM",
       "question": "Which ORM / data-access layer?",
       "required": true,
-      "options": [
-        "drizzle"
-      ]
-    },
-    {
-      "id": "frontend-framework",
-      "header": "Frontend",
-      "question": "Which frontend framework?",
-      "required": true,
-      "options": [
-        "nextjs-app",
-        "angular",
-        "none"
-      ]
-    },
-    {
-      "id": "ui-kit",
-      "header": "UI kit",
-      "question": "Which UI component library?",
-      "required": true,
-      "options": [
-        "shadcn",
-        "primeng",
-        "none"
-      ]
+      "options": ["drizzle", "efcore"]
     },
     {
       "id": "auth",
       "header": "Auth",
       "question": "How are users authenticated?",
       "required": true,
-      "options": [
-        "session-jwt",
-        "none"
-      ]
+      "options": ["jwt", "cookie-session", "none"]
     },
     {
       "id": "authz",
       "header": "Authz",
       "question": "How is authorization modelled?",
       "required": true,
-      "options": [
-        "none"
-      ]
+      "options": ["rbac", "none"]
+    },
+    {
+      "id": "mapping",
+      "header": "Mapping",
+      "question": "How are entities mapped to DTOs?",
+      "required": true,
+      "options": ["automapper", "mapster", "manual"]
+    },
+    {
+      "id": "frontend-framework",
+      "header": "Frontend",
+      "question": "Which frontend framework?",
+      "required": true,
+      "options": ["nextjs-app", "angular", "none"]
+    },
+    {
+      "id": "ui-kit",
+      "header": "UI kit",
+      "question": "Which UI component library?",
+      "required": true,
+      "options": ["shadcn", "primeng", "none"]
     },
     {
       "id": "tracker",
       "header": "Tracker",
       "question": "Which task tracker?",
       "required": true,
-      "options": [
-        "clickup",
-        "jira",
-        "none"
-      ]
+      "options": ["clickup", "jira", "none"]
     }
   ]
 }

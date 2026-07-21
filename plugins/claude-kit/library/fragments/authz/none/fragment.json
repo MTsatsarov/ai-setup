@@ -3,8 +3,6 @@
   "id": "authz/none",
   "axis": "authz",
   "label": "No authorization",
-  "description": "Any authenticated caller may do anything.",
-  "vars": {
-    "name": "none"
-  }
+  "description": "Any authenticated caller may do anything. No roles, no permission checks, no backend-permissions skill.",
+  "vars": { "name": "none" }
 }

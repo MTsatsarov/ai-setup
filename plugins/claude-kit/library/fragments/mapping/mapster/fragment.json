@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "mapping/mapster",
+  "axis": "mapping",
+  "label": "Mapster",
+  "description": "Faster, lighter alternative to AutoMapper with compile-time code generation available. Config lives in IRegister classes.",
+  "requires": { "backend-framework": ["aspnet-core"] },
+  "vars": {
+    "name": "Mapster",
+    "quality_checks": ["Reads use `ProjectToType<TDto>()` rather than loading entities and mapping in memory"]
+  },
+  "contributes": {
+    "backend-models#mapping": "sections/models-mapping.md",
+    "claude-md#stack": "sections/claude-stack.md"
+  },
+  "scaffold": { "commands": [{ "run": "dotnet add src/<% project.pascal %>.Api package Mapster" }] }
+}

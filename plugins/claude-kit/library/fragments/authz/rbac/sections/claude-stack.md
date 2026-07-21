@@ -1,0 +1,1 @@
+- **Authorization:** <% authz.name %> — deny-by-default, roles checked declaratively at the endpoint

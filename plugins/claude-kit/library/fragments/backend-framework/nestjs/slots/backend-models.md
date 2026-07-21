@@ -154,3 +154,5 @@ export const toDetailsDto = (e): EntityNameDetailsResponseDto => ({
   childEntities: e.childEntities.map((c) => ({ id: c.id, name: c.name })),
 });
 ```
+
+<% sections.mapping %>

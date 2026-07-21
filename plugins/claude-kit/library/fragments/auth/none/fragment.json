@@ -2,9 +2,7 @@
   "$schema": "../../../../schema/fragment.schema.json",
   "id": "auth/none",
   "axis": "auth",
-  "label": "No auth",
-  "description": "Open API, authentication added later.",
-  "vars": {
-    "name": "none"
-  }
+  "label": "No authentication",
+  "description": "Open API. Appropriate for an internal tool or a spike; authentication can be added later without changing the CRUD patterns.",
+  "vars": { "name": "none" }
 }

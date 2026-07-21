@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "auth/cookie-session",
+  "axis": "auth",
+  "label": "Cookie / server session",
+  "description": "Server-issued session cookie. Simpler to revoke than a JWT and works well for a same-origin web app; needs CSRF protection.",
+  "vars": {
+    "name": "cookie-based session",
+    "claude_rules": ["Endpoints are authenticated by a session cookie; state-changing requests must carry CSRF protection"]
+  },
+  "contributes": { "claude-md#stack": "sections/claude-stack.md" }
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "mapping/automapper",
+  "axis": "mapping",
+  "label": "AutoMapper profiles",
+  "description": "Convention-based mapping with per-feature Profile classes. ProjectTo pushes the projection into SQL so only the DTO's columns are selected.",
+  "requires": { "backend-framework": ["aspnet-core"] },
+  "vars": {
+    "name": "AutoMapper",
+    "quality_checks": ["Reads use `ProjectTo<TDto>` rather than loading entities and mapping in memory"]
+  },
+  "contributes": {
+    "backend-models#mapping": "sections/models-mapping.md",
+    "claude-md#stack": "sections/claude-stack.md"
+  },
+  "scaffold": { "commands": [{ "run": "dotnet add src/<% project.pascal %>.Api package AutoMapper" }] }
+}

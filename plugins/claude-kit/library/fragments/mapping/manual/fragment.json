@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "mapping/manual",
+  "axis": "mapping",
+  "label": "Manual mapping (explicit select / mapper functions)",
+  "description": "No mapping library. Reads select the response shape directly; anything computed goes through a small pure mapper function. Most explicit, zero magic, more typing.",
+  "vars": {
+    "name": "manual mapping",
+    "quality_checks": [
+      "Reads select the response shape directly \u2014 never load a full row and discard most of it"
+    ]
+  },
+  "contributes": {
+    "backend-models#mapping": "sections/models-mapping.md",
+    "claude-md#stack": "sections/claude-stack.md"
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "$comment": "Canonical skill slots. 'owner_axis' names the axis whose selected fragment supplies the body. 'composite' slots additionally append sections contributed by other axes. 'emit_as' is declared per-fragment, not here — see fragment.json.",
+  "$comment": "Canonical skill slots. 'owner_axis' names the axis whose selected fragment supplies the body. 'composite' slots additionally take contributions from other axes — via '<slot>#<anchor>' (injected at <% sections.<anchor> %>) or a bare '<slot>' (appended). 'emit_as' is declared per-fragment.",
 
   "slots": {
     "backend-entities": {
@@ -18,14 +18,16 @@
       "owner_axis": "backend-framework",
       "group": "Backend",
       "agent": "backend-developer",
-      "composite": false
+      "composite": true,
+      "$comment": "The framework owns DTO shape and validation; the mapping axis supplies the entity->DTO section at the #mapping anchor.",
+      "contributor_order": ["mapping"]
     },
     "backend-service": {
       "owner_axis": "backend-framework",
       "group": "Backend",
       "agent": "backend-developer",
       "composite": true,
-      "$comment": "The framework owns the module/controller/service shape; the ORM supplies the data-access blocks via the #provider and #crud_base anchors. Keeping those in the ORM fragment is what lets a future orm/prisma drop in without forking the NestJS body.",
+      "$comment": "The framework owns the controller/service/module shape; the ORM supplies the data-access blocks via #provider and #crud_base. That split is what lets a new ORM drop in without forking the framework body.",
       "contributor_order": ["orm"]
     },
     "backend-code-quality": {
@@ -33,7 +35,15 @@
       "group": "Backend",
       "agent": "backend-developer",
       "composite": true,
-      "contributor_order": ["orm", "auth", "authz"]
+      "contributor_order": ["orm", "authz"]
+    },
+    "backend-permissions": {
+      "owner_axis": "authz",
+      "group": "Backend",
+      "agent": "backend-developer",
+      "composite": true,
+      "$comment": "Owned by the authz axis; the backend framework supplies the framework-specific enforcement snippet at #enforcement.",
+      "contributor_order": ["backend-framework"]
     }
   },
 
