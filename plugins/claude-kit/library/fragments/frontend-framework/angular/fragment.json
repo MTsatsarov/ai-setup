@@ -4,12 +4,72 @@
   "axis": "frontend-framework",
   "label": "Angular (standalone components)",
   "description": "Standalone components, reactive forms, RxJS service layer.",
+  "traits": {
+    "language": "typescript"
+  },
   "vars": {
     "name": "Angular",
     "app_dir": "angular",
-    "src_dir": "angular/src"
+    "src_dir": "angular/src",
+    "component_dir": "angular/src/app",
+    "route_dir": "angular/src/app",
+    "claude_rules": [
+      "Frontend and backend are **separate concerns** — never mix them in a single agent",
+      "Components are standalone — there is no NgModule to register them in"
+    ],
+    "plain_field": "      <label for=\"name\">Name</label>\n      <input id=\"name\" formControlName=\"name\" />\n\n      @if (form.controls.name.touched && form.controls.name.invalid) {\n        <small class=\"text-red-600\">Name is required (max 200).</small>\n      }\n"
+  },
+  "provides": {
+    "frontend-api-client": "slots/frontend-api-client.md",
+    "frontend-pages": "slots/frontend-pages.md",
+    "frontend-forms": "slots/frontend-forms.md"
   },
   "contributes": {
     "claude-md#stack": "sections/claude-stack.md"
+  },
+  "agent": {
+    "frontend-developer": {
+      "description": "Angular frontend only — standalone components, routing, HttpClient services and reactive forms. Never touches backend code.",
+      "lsp_trace": "a component or service to its definition",
+      "impl_order": "models → HttpClient service → route → component → reactive form",
+      "context": [
+        "Frontend source lives in `<% frontend.src_dir %>`; routes are declared in `app.routes.ts`",
+        "Components are standalone and list their own `imports`",
+        "HTTP access goes through an `@Injectable({ providedIn: 'root' })` service, never from a component directly"
+      ],
+      "rules": [
+        "Never call `HttpClient` from a component — inject a service",
+        "Never leave a manual `subscribe` without teardown — prefer the `async` pipe or `takeUntilDestroyed`",
+        "Never touch backend code"
+      ]
+    }
+  },
+  "scaffold": {
+    "$comment": "The Angular CLI enforces a Node floor and refuses to start below it, so that floor is declared in `requires` and checked before any command runs. @angular/animations is installed explicitly because the CLI starter omits it while PrimeNG peer-depends on it. VERIFICATION NOTE: this exact @latest combination was NOT executed during authoring — the authoring machine had Node 22.16, below the CLI floor. The equivalent shape was verified pinned to Angular 20 + PrimeNG 20 + @angular/animations@^20.3.0, which installed and built cleanly.",
+    "requires": {
+      "node": "22.22.3"
+    },
+    "commands": [
+      {
+        "run": "npx -y @angular/cli@latest new <% project.slug %>-web --directory angular --routing --style=scss --skip-git --package-manager npm --defaults"
+      }
+    ],
+    "conventions": [
+      {
+        "from": "conventions/files/app.config.ts",
+        "to": "<% frontend.src_dir %>/app/app.config.ts"
+      }
+    ],
+    "env": {
+      "NG_APP_API_URL": "http://localhost:<% backend.dev_port %>"
+    }
+  },
+  "verify": {
+    "build": "npm --prefix angular run build"
+  },
+  "settings": {
+    "enabledPlugins": [
+      "typescript-lsp@claude-plugins-official"
+    ]
   }
 }

@@ -16,9 +16,12 @@
 - Never hand-edit files under `Data/Migrations/` — change the entity and run `dotnet ef migrations add`
 - Endpoints are authenticated by JWT bearer token; the fallback policy denies anonymous access unless an endpoint opts out with `[AllowAnonymous]`
 - Authorization is role-based and deny-by-default — a new endpoint is closed unless it explicitly opts out
+- Frontend and backend are **separate concerns** — never mix them in a single agent
+- Components are standalone — there is no NgModule to register them in
 
 ### Agents
 - `backend-developer` — C# backend only — ASP.NET Core controllers, scoped services, EF Core entities and migrations, DTOs. Never touches frontend code.
+- `frontend-developer` — Angular frontend only — standalone components, routing, HttpClient services and reactive forms. Never touches backend code.
 
 ### Skills
 
@@ -30,6 +33,12 @@
 - `backend-models`
 - `backend-permissions`
 - `backend-service`
+
+**Frontend**
+- `frontend-api-client`
+- `frontend-components`
+- `frontend-forms`
+- `frontend-pages`
 
 
 <!--

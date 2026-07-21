@@ -5,11 +5,40 @@
   "label": "shadcn/ui + Tailwind",
   "description": "Copy-in Radix primitives styled with Tailwind.",
   "vars": {
-    "name": "shadcn/ui + Tailwind"
+    "name": "shadcn/ui + Tailwind",
+    "add_cmd": "npx shadcn@latest add <component>",
+    "component_root": "<% frontend.src_dir %>/components/ui",
+    "form_imports": "import { Button } from '@/components/ui/button';\nimport { Input } from '@/components/ui/input';\nimport { Label } from '@/components/ui/label';",
+    "submit_button": "Button"
   },
   "requires": {
     "frontend-framework": [
       "nextjs-app"
+    ]
+  },
+  "provides": {
+    "frontend-components": "slots/frontend-components.md"
+  },
+  "contributes": {
+    "frontend-forms#ui": "sections/forms-ui.md"
+  },
+  "agent": {
+    "frontend-developer": {
+      "context": [
+        "UI primitives are shadcn components copied into `<% ui-kit.component_root %>` — they are project source, not a dependency"
+      ],
+      "rules": [
+        "Add a primitive with `<% ui-kit.add_cmd %>` rather than hand-writing it, then edit the copied file freely"
+      ]
+    }
+  },
+  "scaffold": {
+    "$comment": "Verified: `shadcn init -d -y` writes components.json and src/lib/utils.ts, and the app still builds. The -d flag is load-bearing — shadcn 4.x added an interactive component-library picker that -y alone does NOT skip, so without -d this command blocks forever waiting on stdin.",
+    "commands": [
+      {
+        "run": "npx shadcn@latest init -d -y",
+        "cwd": "<% frontend.app_dir %>"
+      }
     ]
   }
 }

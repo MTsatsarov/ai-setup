@@ -1,6 +1,9 @@
 Would scaffold into /tmp/kit-golden
 
-Commands (10) — run in order, stopping at the first failure:
+Requires:
+  node >= 22.22.3  (frontend-framework/angular)
+
+Commands (12) — run in order, stopping at the first failure:
    1. dotnet new sln --name DemoCRM
    2. dotnet new webapi --use-controllers --name DemoCRM.Api --output src/DemoCRM.Api
    3. dotnet sln add src/DemoCRM.Api/DemoCRM.Api.csproj
@@ -13,14 +16,22 @@ Commands (10) — run in order, stopping at the first failure:
    9. dotnet tool install --global dotnet-ef
       note: skip if already installed; `dotnet tool update --global dotnet-ef` to refresh
   10. dotnet add src/DemoCRM.Api package AutoMapper
+  11. npx -y @angular/cli@latest new demo-crm-web --directory angular --routing --style=scss --skip-git --package-manager npm --defaults
+  12. npm install primeng @primeuix/themes @angular/animations
 
-Convention files (4) — rendered from the library, then written:
+Convention files (6) — rendered from the library, then written:
   src/DemoCRM.Api/Common/Entities/AuditedEntity.cs
   src/DemoCRM.Api/Common/Models/PaginationQuery.cs
+  src/DemoCRM.Api/Properties/launchSettings.json
   src/DemoCRM.Api/Common/Data/AppDbContext.cs
   src/DemoCRM.Api/Common/Services/CrudService.cs
+  angular/src/app/app.config.ts
 
-Environment (.env.example, 1 key(s)):
+Environment (.env.example, 2 key(s)):
   ConnectionStrings__Default
+  NG_APP_API_URL
+
+This machine does not meet the requirements yet:
+  ✗ node 22.16.0 is too old — frontend-framework/angular needs >= 22.22.3
 
 Nothing was written — this was --dry-run.

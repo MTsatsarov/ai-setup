@@ -1,0 +1,14 @@
+{
+  "$comment": "Pins the 'none' paths, which the two stack fixtures never exercise: frontend-framework=none must skip the frontend-developer agent entirely and emit no Frontend group, and auth/authz/tracker=none must still render. Regression guard for skip_when and for any template that assumes a frontend exists.",
+  "project": { "name": "Backend Only", "notification_title": "backend-only" },
+  "answers": {
+    "backend-framework": "nestjs",
+    "orm": "drizzle",
+    "auth": "none",
+    "authz": "none",
+    "mapping": "manual",
+    "frontend-framework": "none",
+    "ui-kit": "none",
+    "tracker": "none"
+  }
+}

@@ -16,9 +16,12 @@
 - Never hand-edit files under `apps/api/drizzle/` — change the schema and run `npx drizzle-kit generate`
 - Endpoints are authenticated by JWT bearer token; the fallback policy denies anonymous access unless an endpoint opts out with `[AllowAnonymous]`
 - Authorization is role-based and deny-by-default — a new endpoint is closed unless it explicitly opts out
+- Frontend and backend are **separate concerns** — never mix them in a single agent
+- Components are Server Components unless they need state, effects or browser APIs — add `"use client"` only then
 
 ### Agents
 - `backend-developer` — TypeScript backend only — NestJS modules/controllers/services, DTOs, guards. Never touches frontend code.
+- `frontend-developer` — Next.js App Router frontend only — pages, layouts, Server and Client Components, data fetching and forms. Never touches backend code.
 
 ### Skills
 
@@ -29,6 +32,12 @@
 - `backend-models`
 - `backend-module`
 - `backend-permissions`
+
+**Frontend**
+- `frontend-api-client`
+- `frontend-components`
+- `frontend-forms`
+- `frontend-pages`
 
 
 <!--

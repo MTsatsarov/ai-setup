@@ -3,7 +3,7 @@
   "id": "backend-framework/nestjs",
   "axis": "backend-framework",
   "label": "NestJS (TypeScript)",
-  "description": "Modular TypeScript backend \u2014 @Module/@Controller/@Injectable triad, DI by token, class-validator DTOs, Swagger from decorators.",
+  "description": "Modular TypeScript backend — @Module/@Controller/@Injectable triad, DI by token, class-validator DTOs, Swagger from decorators.",
   "traits": {
     "language": "typescript",
     "runtime": "node"
@@ -13,9 +13,10 @@
     "src_dir": "apps/api/src",
     "app_dir": "apps/api",
     "common_dir": "apps/api/src/common",
+    "dev_port": "3311",
     "claude_rules": [
-      "Backend and frontend are **separate concerns** \u2014 never mix them in a single agent",
-      "No business logic in controllers \u2014 controllers delegate to injectable services",
+      "Backend and frontend are **separate concerns** — never mix them in a single agent",
+      "No business logic in controllers — controllers delegate to injectable services",
       "Request DTOs carry class-validator decorators and pass through the global `ValidationPipe`"
     ]
   },
@@ -33,16 +34,16 @@
   },
   "agent": {
     "backend-developer": {
-      "description": "TypeScript backend only \u2014 NestJS modules/controllers/services, DTOs, guards. Never touches frontend code.",
+      "description": "TypeScript backend only — NestJS modules/controllers/services, DTOs, guards. Never touches frontend code.",
       "lsp_trace": "a DTO or service method to its implementation",
-      "impl_order": "schema (+ migration) \u2192 module \u2192 service \u2192 controller",
+      "impl_order": "schema (+ migration) → module → service → controller",
       "context": [
         "Backend source lives in `apps/api/src`, one folder per feature",
         "Features are wired as `@Module`s imported by `AppModule`",
         "DTOs live in the feature's `dto/` folder and are validated by the global `ValidationPipe`"
       ],
       "rules": [
-        "Never put business logic in a controller \u2014 delegate to an injectable service",
+        "Never put business logic in a controller — delegate to an injectable service",
         "Inject providers by token via DI; never `new` a dependency inside a class",
         "Never touch frontend code"
       ]

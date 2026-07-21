@@ -13,6 +13,8 @@
     "app_dir": "src/<% project.pascal %>.Api",
     "common_dir": "src/<% project.pascal %>.Api/Common",
     "solution": "<% project.pascal %>.sln",
+    "dev_port": "5080",
+    "dev_https_port": "7080",
     "claude_rules": [
       "Backend and frontend are **separate concerns** — never mix them in a single agent",
       "No business logic in controllers — controllers delegate to a scoped service",
@@ -62,7 +64,8 @@
     ],
     "conventions": [
       { "from": "conventions/files/AuditedEntity.cs", "to": "<% backend.common_dir %>/Entities/AuditedEntity.cs" },
-      { "from": "conventions/files/PaginationQuery.cs", "to": "<% backend.common_dir %>/Models/PaginationQuery.cs" }
+      { "from": "conventions/files/PaginationQuery.cs", "to": "<% backend.common_dir %>/Models/PaginationQuery.cs" },
+      { "from": "conventions/files/launchSettings.json", "to": "<% backend.src_dir %>/Properties/launchSettings.json" }
     ]
   },
 

@@ -260,8 +260,11 @@ export function resolvePlan(answersDoc) {
    * axis order rather than inventing a scheduler.
    */
 
-  const scaffold = { commands: [], conventions: [], env: {} };
+  const scaffold = { requires: [], commands: [], conventions: [], env: {} };
   for (const frag of selected) {
+    for (const [tool, min] of Object.entries(frag.scaffold?.requires ?? {})) {
+      scaffold.requires.push({ tool, min, from: frag.id });
+    }
     for (const cmd of frag.scaffold?.commands ?? []) {
       scaffold.commands.push({ ...cmd, from: frag.id });
     }

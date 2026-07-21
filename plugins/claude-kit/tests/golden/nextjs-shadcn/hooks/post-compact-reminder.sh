@@ -13,6 +13,8 @@ Reminder — nextjs-shadcn key rules:
 - Never hand-edit files under `apps/api/drizzle/` — change the schema and run `npx drizzle-kit generate`
 - Endpoints are authenticated by JWT bearer token; the fallback policy denies anonymous access unless an endpoint opts out with `[AllowAnonymous]`
 - Authorization is role-based and deny-by-default — a new endpoint is closed unless it explicitly opts out
+- Frontend and backend are **separate concerns** — never mix them in a single agent
+- Components are Server Components unless they need state, effects or browser APIs — add `"use client"` only then
 
 Verify with: npm --workspace apps/api run build
 EOF

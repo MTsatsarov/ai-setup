@@ -4,7 +4,13 @@
   "axis": "ui-kit",
   "label": "No UI kit",
   "description": "Plain markup, no component library.",
+  "$comment": "Provides no frontend-components slot — there is no component library to document. It must still contribute the frontend-forms #ui anchor, because that anchor is not optional; it delegates to the framework's own plain_field, since plain markup differs between JSX and Angular templates and only the framework knows which it is.",
   "vars": {
-    "name": "none"
+    "name": "none",
+    "ng_submit": "<button type=\"submit\" [disabled]=\"form.invalid || saving\">Save</button>",
+    "submit_button": "button"
+  },
+  "contributes": {
+    "frontend-forms#ui": "sections/forms-ui.md"
   }
 }

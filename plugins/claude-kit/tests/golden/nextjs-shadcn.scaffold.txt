@@ -3,7 +3,7 @@ Would scaffold into /tmp/kit-golden
 Written first (1) — commands below depend on these:
   package.json
 
-Commands (6) — run in order, stopping at the first failure:
+Commands (9) — run in order, stopping at the first failure:
    1. npx -y @nestjs/cli@latest new apps/api --skip-git --skip-install --package-manager npm
       note: creates apps/api under the root workspaces package.json written in the pre phase
    2. npm install --workspaces --include-workspace-root
@@ -12,6 +12,10 @@ Commands (6) — run in order, stopping at the first failure:
       note: the CLI's sample controller/service are replaced by the first real feature; the app.module.ts convention below drops the imports they left behind
    5. npm install --workspace apps/api drizzle-orm pg
    6. npm install --workspace apps/api -D drizzle-kit @types/pg
+   7. mkdir -p apps
+      note: create-next-app refuses to write into a path whose parent does not exist
+   8. npx create-next-app@latest apps/web --ts --app --tailwind --eslint --src-dir --use-npm --disable-git --yes
+   9. npx shadcn@latest init -d -y
 
 Convention files (9) — rendered from the library, then written:
   apps/api/src/main.ts
@@ -24,7 +28,8 @@ Convention files (9) — rendered from the library, then written:
   apps/api/src/common/db/drizzle.module.ts
   apps/api/src/common/crud/crud.service.ts
 
-Environment (.env.example, 1 key(s)):
+Environment (.env.example, 2 key(s)):
   DATABASE_URL
+  NEXT_PUBLIC_API_URL
 
 Nothing was written — this was --dry-run.

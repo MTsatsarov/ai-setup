@@ -4,12 +4,67 @@
   "axis": "frontend-framework",
   "label": "Next.js (App Router)",
   "description": "React Server Components by default, file-system routing under app/.",
+  "traits": {
+    "language": "typescript"
+  },
   "vars": {
     "name": "Next.js",
     "app_dir": "apps/web",
-    "src_dir": "apps/web/src"
+    "src_dir": "apps/web/src",
+    "component_dir": "apps/web/src/components",
+    "route_dir": "apps/web/src/app",
+    "claude_rules": [
+      "Frontend and backend are **separate concerns** — never mix them in a single agent",
+      "Components are Server Components unless they need state, effects or browser APIs — add `\"use client\"` only then"
+    ],
+    "plain_field": "        <div className=\"space-y-2\">\n          <label htmlFor=\"name\">Name</label>\n          <input id=\"name\" {...register('name')} aria-invalid={!!errors.name} />\n          {errors.name && <p className=\"text-sm text-red-600\">{errors.name.message}</p>}\n        </div>\n"
+  },
+  "provides": {
+    "frontend-api-client": "slots/frontend-api-client.md",
+    "frontend-pages": "slots/frontend-pages.md",
+    "frontend-forms": "slots/frontend-forms.md"
   },
   "contributes": {
     "claude-md#stack": "sections/claude-stack.md"
+  },
+  "agent": {
+    "frontend-developer": {
+      "description": "Next.js App Router frontend only — pages, layouts, Server and Client Components, data fetching and forms. Never touches backend code.",
+      "lsp_trace": "a component or hook to its definition",
+      "impl_order": "types → API client function → page/layout → components → form",
+      "context": [
+        "Frontend source lives in `<% frontend.src_dir %>`; routes are folders under `<% frontend.route_dir %>`",
+        "Server Components are the default — `\"use client\"` is opt-in, not boilerplate",
+        "Shared components live in `<% frontend.component_dir %>`"
+      ],
+      "rules": [
+        "Never add `\"use client\"` to a component that does not need state, effects or browser APIs",
+        "Never call the database or import backend code from a component — go through the API client",
+        "Never touch backend code"
+      ]
+    }
+  },
+  "scaffold": {
+    "$comment": "Verified end to end on Node 22.16: create-next-app succeeds, the app builds, and the generated route tree renders. --disable-git matters — without it the CLI initialises a nested git repo inside apps/web, which breaks the surrounding monorepo.",
+    "commands": [
+      {
+        "run": "mkdir -p apps",
+        "note": "create-next-app refuses to write into a path whose parent does not exist"
+      },
+      {
+        "run": "npx create-next-app@latest apps/web --ts --app --tailwind --eslint --src-dir --use-npm --disable-git --yes"
+      }
+    ],
+    "env": {
+      "NEXT_PUBLIC_API_URL": "http://localhost:<% backend.dev_port %>"
+    }
+  },
+  "verify": {
+    "build": "npm --prefix apps/web run build"
+  },
+  "settings": {
+    "enabledPlugins": [
+      "typescript-lsp@claude-plugins-official"
+    ]
   }
 }

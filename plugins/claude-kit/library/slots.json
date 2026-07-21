@@ -51,6 +51,33 @@
       "composite": true,
       "$comment": "Owned by the authz axis; the backend framework supplies the framework-specific enforcement snippet at #enforcement.",
       "contributor_order": ["backend-framework"]
+    },
+    "frontend-api-client": {
+      "owner_axis": "frontend-framework",
+      "group": "Frontend",
+      "agent": "frontend-developer",
+      "composite": false
+    },
+    "frontend-pages": {
+      "owner_axis": "frontend-framework",
+      "group": "Frontend",
+      "agent": "frontend-developer",
+      "composite": false
+    },
+    "frontend-forms": {
+      "owner_axis": "frontend-framework",
+      "group": "Frontend",
+      "agent": "frontend-developer",
+      "composite": true,
+      "$comment": "The framework owns form mechanics (react-hook-form vs reactive forms); the UI kit supplies the control markup at the #ui anchor. Every ui-kit option must contribute one, including 'none' — the anchor is not optional.",
+      "contributor_order": ["ui-kit"]
+    },
+    "frontend-components": {
+      "owner_axis": "ui-kit",
+      "group": "Frontend",
+      "agent": "frontend-developer",
+      "composite": false,
+      "$comment": "Owned by the UI kit rather than the framework: how you obtain a button is a property of shadcn or PrimeNG, not of Next.js or Angular. ui-kit/none provides nothing, so a project without a kit simply has no such skill."
     }
   },
 
@@ -59,6 +86,11 @@
       "template": "base/agents/backend-developer.md.tmpl",
       "required_axis": "backend-framework",
       "skip_when": { "backend-framework": ["none"] }
+    },
+    "frontend-developer": {
+      "template": "base/agents/frontend-developer.md.tmpl",
+      "required_axis": "frontend-framework",
+      "skip_when": { "frontend-framework": ["none"] }
     }
   }
 }

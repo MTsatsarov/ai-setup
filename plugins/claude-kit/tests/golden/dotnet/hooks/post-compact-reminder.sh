@@ -13,6 +13,8 @@ Reminder — Demo CRM key rules:
 - Never hand-edit files under `Data/Migrations/` — change the entity and run `dotnet ef migrations add`
 - Endpoints are authenticated by JWT bearer token; the fallback policy denies anonymous access unless an endpoint opts out with `[AllowAnonymous]`
 - Authorization is role-based and deny-by-default — a new endpoint is closed unless it explicitly opts out
+- Frontend and backend are **separate concerns** — never mix them in a single agent
+- Components are standalone — there is no NgModule to register them in
 
 Verify with: dotnet build
 EOF

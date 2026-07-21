@@ -30,6 +30,8 @@ import { PLUGIN_ROOT, readJson, isMainModule } from './lib/library.mjs';
 export function buildScaffoldPlan(plan, root) {
   const sc = plan.scaffold ?? { commands: [], conventions: [], env: {} };
 
+  const requires = sc.requires ?? [];
+
   const commands = (sc.commands ?? []).map((c, i) => ({
     step: i + 1,
     run: c.run,
@@ -49,6 +51,7 @@ export function buildScaffoldPlan(plan, root) {
   const env = Object.entries(sc.env ?? {});
 
   return {
+    requires,
     commands,
     conventions,
     pre: conventions.filter((c) => c.phase === 'pre'),
@@ -62,6 +65,11 @@ export function buildScaffoldPlan(plan, root) {
 
 function describe(sp) {
   const out = [];
+  if (sp.requires.length) {
+    out.push('Requires:');
+    for (const r of sp.requires) out.push(`  ${r.tool} >= ${r.min}  (${r.from})`);
+    out.push('');
+  }
   if (sp.pre.length) {
     out.push(`Written first (${sp.pre.length}) — commands below depend on these:`);
     for (const c of sp.pre) out.push(`  ${c.rel}`);
@@ -88,6 +96,40 @@ function describe(sp) {
   return out.join('\n');
 }
 
+/* -------------------------------------------------------------- preflight */
+
+const parseVersion = (s) => (s.match(/(\d+)\.(\d+)\.(\d+)/) ?? []).slice(1, 4).map(Number);
+
+/** a >= b, comparing major.minor.patch. */
+function atLeast(a, b) {
+  for (let i = 0; i < 3; i++) {
+    if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0);
+  }
+  return true;
+}
+
+/**
+ * Version floors are checked before anything runs. The Angular CLI refuses to
+ * start on an old Node, and finding that out at command 4 of 6 leaves a
+ * half-scaffolded directory for no reason.
+ */
+function checkRequirements(reqs) {
+  const problems = [];
+  for (const { tool, min, from } of reqs) {
+    const r = spawnSync(tool, ['--version'], { encoding: 'utf8' });
+    if (r.error || r.status !== 0) {
+      problems.push(`${tool} is required (>= ${min}, for ${from}) but is not installed`);
+      continue;
+    }
+    const found = parseVersion(r.stdout ?? '');
+    if (!found.length) continue; // unparseable output — do not block on a guess
+    if (!atLeast(found, parseVersion(min))) {
+      problems.push(`${tool} ${found.join('.')} is too old — ${from} needs >= ${min}`);
+    }
+  }
+  return problems;
+}
+
 /* -------------------------------------------------------------- execution */
 
 function runCommands(sp, from) {
@@ -98,10 +140,24 @@ function runCommands(sp, from) {
     }
     console.log(`\n→ [${c.step}/${sp.commands.length}] ${c.run}`);
     mkdirSync(c.cwd, { recursive: true });
-    const r = spawnSync('/bin/sh', ['-c', c.run], { cwd: c.cwd, stdio: 'inherit' });
+
+    // stdin is /dev/null, never inherited. A scaffold command that decides to
+    // prompt — `shadcn init` grew an interactive picker that -y does not
+    // suppress — would otherwise block forever with no output explaining why.
+    // Closed stdin turns that hang into either a default or a clean failure.
+    // The timeout is the backstop for a network stall that never returns.
+    const r = spawnSync('/bin/sh', ['-c', c.run], {
+      cwd: c.cwd,
+      stdio: ['ignore', 'inherit', 'inherit'],
+      timeout: 15 * 60 * 1000,
+    });
 
     if (r.error) {
-      console.error(`\nFailed to launch step ${c.step}: ${r.error.message}`);
+      const why =
+        r.error.code === 'ETIMEDOUT'
+          ? 'timed out after 15 minutes — it may be waiting on input or a stalled download'
+          : r.error.message;
+      console.error(`\nStep ${c.step} failed to run: ${why}`);
       return c.step;
     }
     if (r.status !== 0) {
@@ -188,8 +244,21 @@ function main(argv) {
   if (has('dry-run')) {
     console.log(`Would scaffold into ${root}\n`);
     console.log(describe(sp));
+    const unmet = checkRequirements(sp.requires);
+    if (unmet.length) {
+      console.log('\nThis machine does not meet the requirements yet:');
+      for (const p of unmet) console.log(`  ✗ ${p}`);
+    }
     console.log('\nNothing was written — this was --dry-run.');
     return 0;
+  }
+
+  const unmet = checkRequirements(sp.requires);
+  if (unmet.length) {
+    console.error('Cannot scaffold — unmet requirements:');
+    for (const p of unmet) console.error(`  ✗ ${p}`);
+    console.error('\nNothing was written. Upgrade the tool above and re-run.');
+    return 1;
   }
 
   const resuming = Number(arg('from') ?? 0) > 0;
