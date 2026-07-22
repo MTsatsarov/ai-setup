@@ -35,20 +35,19 @@ that belongs in an app component that uses `Button`.
 ## Composition, not `asChild`
 
 The current default preset (`base-nova`) is built on **Base UI, not Radix**, and its `Button` has
-**no `asChild` prop**. To render a link that looks like a button, apply the variants to the link:
+**no `asChild` prop**. To render a link that looks like a button, apply the variants to your router's
+link component (`next/link`'s `<Link href>` or `react-router-dom`'s `<Link to>`):
 
 ```tsx
-import Link from 'next/link';
 import { buttonVariants } from '@/components/ui/button';
 
-<Link href="/entity-names/new" className={buttonVariants()}>
-  New
-</Link>
+// with your router's Link — shown here as a plain anchor:
+<a href="/entity-names/new" className={buttonVariants()}>New</a>
 ```
 
 ```tsx
 // Variants take the same options as the Button props:
-<Link href="/x" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Edit</Link>
+<a href="/x" className={buttonVariants({ variant: 'outline', size: 'sm' })}>Edit</a>
 ```
 
 Reaching for `asChild` out of habit is a type error, not a runtime surprise — but the message is
@@ -75,7 +74,8 @@ override.
 - Use the theme tokens the primitives use — `bg-background`, `text-muted-foreground`,
   `border-input` — not raw palette classes like `bg-gray-100`. Tokens follow the theme; raw
   colours do not.
-- Change the theme in the CSS variables in `globals.css`, not by overriding colours at call sites.
+- Change the theme in the CSS variables in your global stylesheet (`globals.css` on Next.js,
+  `index.css` on Vite), not by overriding colours at call sites.
 
 ## Checklist
 - [ ] Primitive added with the CLI, not hand-written

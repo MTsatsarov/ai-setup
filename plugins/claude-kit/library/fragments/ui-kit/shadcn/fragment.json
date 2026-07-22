@@ -3,17 +3,24 @@
   "id": "ui-kit/shadcn",
   "axis": "ui-kit",
   "label": "shadcn/ui + Tailwind",
-  "description": "Copy-in Radix primitives styled with Tailwind.",
+  "description": "Copy-in Base UI primitives styled with Tailwind.",
   "vars": {
     "name": "shadcn/ui + Tailwind",
     "add_cmd": "npx shadcn@latest add <component>",
     "component_root": "<% frontend.src_dir %>/components/ui",
     "form_imports": "import { Button } from '@/components/ui/button';\nimport { Input } from '@/components/ui/input';\nimport { Label } from '@/components/ui/label';",
-    "submit_button": "Button"
+    "submit_button": "Button",
+    "react_provider_imports": "",
+    "react_provider_open": "<>",
+    "react_provider_close": "</>",
+    "next_provider_imports": "",
+    "next_provider_open": "<>",
+    "next_provider_close": "</>"
   },
   "requires": {
     "frontend-framework": [
-      "nextjs-app"
+      "nextjs-app",
+      "react-vite"
     ]
   },
   "provides": {
@@ -33,11 +40,14 @@
     }
   },
   "scaffold": {
-    "$comment": "Verified: `shadcn init -d -y` writes components.json and src/lib/utils.ts, and the app still builds. The -d flag is load-bearing — shadcn 4.x added an interactive component-library picker that -y alone does NOT skip, so without -d this command blocks forever waiting on stdin.",
+    "$comment": "Verified on both Next.js and React (Vite): `shadcn init -d -y` writes components.json and src/lib/utils.ts. On Vite this depends on react-vite having already copied its config in — shadcn's file resolver needs baseUrl+paths in the ROOT tsconfig.json (or it writes to a literal @/ directory) plus the Vite `@` alias and Tailwind, all of which react-vite stages before this command runs. The -d flag is load-bearing — shadcn 4.x added an interactive component-library picker that -y alone does NOT skip, so without -d this command blocks forever waiting on stdin. The second command re-installs base-nova's runtime deps with --prefix: shadcn init shells out to `npm install` with cwd = apps/web, which SILENTLY no-ops when a backend has made apps/web an npm workspace (npm filters to a phantom workspace named 'web'); --prefix installs into apps/web directly. This list tracks the base-nova preset — re-check it if shadcn's default style changes.",
     "commands": [
       {
         "run": "npx shadcn@latest init -d -y",
         "cwd": "<% frontend.app_dir %>"
+      },
+      {
+        "run": "npm --prefix <% frontend.app_dir %> install @base-ui/react class-variance-authority clsx tailwind-merge tw-animate-css shadcn @fontsource-variable/geist lucide-react"
       }
     ]
   }

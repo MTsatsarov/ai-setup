@@ -1,0 +1,17 @@
+{
+  "$comment": "Pins Next.js with the new Material UI kit. Exercises nextjs-app's new layout.tsx convention with MUI's AppRouterCacheProvider (v16-appRouter) injection and Tailwind coexistence.",
+  "project": {
+    "name": "Nextjs MUI",
+    "notification_title": "nextjs-mui"
+  },
+  "answers": {
+    "backend-framework": "nestjs",
+    "orm": "drizzle",
+    "frontend-framework": "nextjs-app",
+    "ui-kit": "mui",
+    "auth": "jwt",
+    "authz": "rbac",
+    "tracker": "clickup",
+    "mapping": "manual"
+  }
+}

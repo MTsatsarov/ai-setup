@@ -1,0 +1,17 @@
+{
+  "$comment": "Pins the new React (Vite) frontend with the new Material UI kit. Exercises react-vite's staged config conventions, main.tsx provider injection, and MUI's theme.ts + forms-ui.",
+  "project": {
+    "name": "React MUI",
+    "notification_title": "react-mui"
+  },
+  "answers": {
+    "backend-framework": "nestjs",
+    "orm": "drizzle",
+    "frontend-framework": "react-vite",
+    "ui-kit": "mui",
+    "auth": "jwt",
+    "authz": "rbac",
+    "tracker": "clickup",
+    "mapping": "manual"
+  }
+}

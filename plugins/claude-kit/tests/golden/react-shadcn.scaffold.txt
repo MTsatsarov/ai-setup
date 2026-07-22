@@ -1,0 +1,44 @@
+Would scaffold into /tmp/kit-golden
+
+Written first (4) — commands below depend on these:
+  .claude-kit/scaffold/react-vite/vite.config.ts
+  .claude-kit/scaffold/react-vite/tsconfig.json
+  .claude-kit/scaffold/react-vite/tsconfig.app.json
+  .claude-kit/scaffold/react-vite/index.css
+
+Commands (16) — run in order, stopping at the first failure:
+   1. dotnet new sln --name ReactShadcn
+   2. dotnet new webapi --use-controllers --name ReactShadcn.Api --output src/ReactShadcn.Api
+   3. dotnet sln add src/ReactShadcn.Api/ReactShadcn.Api.csproj
+   4. dotnet add src/ReactShadcn.Api package Swashbuckle.AspNetCore
+   5. rm -f src/ReactShadcn.Api/WeatherForecast.cs src/ReactShadcn.Api/Controllers/WeatherForecastController.cs
+      note: the template's sample endpoint is replaced by the first real feature
+   6. dotnet add src/ReactShadcn.Api package Microsoft.EntityFrameworkCore
+   7. dotnet add src/ReactShadcn.Api package Microsoft.EntityFrameworkCore.Design
+   8. dotnet add src/ReactShadcn.Api package Npgsql.EntityFrameworkCore.PostgreSQL
+   9. dotnet tool install --global dotnet-ef
+      note: skip if already installed; `dotnet tool update --global dotnet-ef` to refresh
+  10. dotnet add src/ReactShadcn.Api package AutoMapper
+  11. mkdir -p apps
+      note: create-vite needs the parent dir to exist
+  12. npm create vite@latest apps/web -- --template react-ts
+  13. npm --prefix apps/web install react-router-dom tailwindcss @tailwindcss/vite react-hook-form zod @hookform/resolvers
+  14. cp .claude-kit/scaffold/react-vite/vite.config.ts apps/web/vite.config.ts && cp .claude-kit/scaffold/react-vite/tsconfig.json apps/web/tsconfig.json && cp .claude-kit/scaffold/react-vite/tsconfig.app.json apps/web/tsconfig.app.json && cp .claude-kit/scaffold/react-vite/index.css apps/web/src/index.css
+      note: overwrite create-vite defaults with the Tailwind + @/* alias config the ui-kit step depends on
+  15. npx shadcn@latest init -d -y
+  16. npm --prefix apps/web install @base-ui/react class-variance-authority clsx tailwind-merge tw-animate-css shadcn @fontsource-variable/geist lucide-react
+
+Convention files (7) — rendered from the library, then written:
+  src/ReactShadcn.Api/Common/Entities/AuditedEntity.cs
+  src/ReactShadcn.Api/Common/Models/PaginationQuery.cs
+  src/ReactShadcn.Api/Properties/launchSettings.json
+  src/ReactShadcn.Api/Common/Data/AppDbContext.cs
+  src/ReactShadcn.Api/Common/Services/CrudService.cs
+  apps/web/src/main.tsx
+  apps/web/src/App.tsx
+
+Environment (.env.example, 2 key(s)):
+  ConnectionStrings__Default
+  VITE_API_URL
+
+Nothing was written — this was --dry-run.

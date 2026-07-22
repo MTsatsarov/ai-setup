@@ -1,0 +1,52 @@
+{
+  "$schema": "../../../../schema/fragment.schema.json",
+  "id": "ui-kit/mui",
+  "axis": "ui-kit",
+  "label": "Material UI",
+  "description": "Material UI (MUI) component suite for React, with Emotion styling.",
+  "vars": {
+    "name": "Material UI",
+    "add_cmd": "import { Button } from '@mui/material'",
+    "component_root": "@mui/material",
+    "form_imports": "import { Button, TextField } from '@mui/material';",
+    "submit_button": "Button",
+    "react_provider_imports": "import { ThemeProvider } from '@mui/material/styles';\nimport CssBaseline from '@mui/material/CssBaseline';\nimport { theme } from '@/theme';\n",
+    "react_provider_open": "<ThemeProvider theme={theme}>\n      <CssBaseline />",
+    "react_provider_close": "</ThemeProvider>",
+    "next_provider_imports": "import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';\nimport { ThemeProvider } from '@mui/material/styles';\nimport CssBaseline from '@mui/material/CssBaseline';\nimport { theme } from '@/theme';\n",
+    "next_provider_open": "<AppRouterCacheProvider options={{ enableCssLayer: true }}>\n          <ThemeProvider theme={theme}>\n            <CssBaseline />",
+    "next_provider_close": "</ThemeProvider>\n        </AppRouterCacheProvider>"
+  },
+  "requires": {
+    "frontend-framework": ["react-vite", "nextjs-app"]
+  },
+  "provides": {
+    "frontend-components": "slots/frontend-components.md"
+  },
+  "contributes": {
+    "frontend-forms#ui": "sections/forms-ui.md"
+  },
+  "agent": {
+    "frontend-developer": {
+      "context": [
+        "UI components are imported from the top-level `@mui/material` entry — there is no copy-in directory and no global registration",
+        "The theme lives in `<% frontend.src_dir %>/theme.ts` and is applied once by `ThemeProvider` at the app root"
+      ],
+      "rules": [
+        "Style with the `sx` prop or `styled()`, never inline `style=` — `sx` reads theme tokens and supports responsive breakpoints",
+        "Import components from `@mui/material`; do not deep-import internal paths"
+      ]
+    }
+  },
+  "scaffold": {
+    "$comment": "VERIFICATION NOTE: built on Node 22.16 (Jul 2026) on both React (Vite 8) and Next.js 16. @mui/material-nextjs v9 exports v13..v16-appRouter; the provider var pins v16-appRouter because create-next-app@latest currently installs Next 16 — this subpath is Next-major-specific and must be re-checked when the Next major moves. @mui/material-nextjs is installed unconditionally; on the Vite target it is an unused dependency. AppRouterCacheProvider uses options.enableCssLayer so MUI and Tailwind v4's preflight coexist with correct precedence.",
+    "commands": [
+      {
+        "run": "npm --prefix <% frontend.app_dir %> install @mui/material @emotion/react @emotion/styled @mui/material-nextjs"
+      }
+    ],
+    "conventions": [
+      { "from": "conventions/files/theme.ts", "to": "<% frontend.src_dir %>/theme.ts", "phase": "post" }
+    ]
+  }
+}

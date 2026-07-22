@@ -55,6 +55,13 @@
         "run": "npx create-next-app@latest apps/web --ts --app --tailwind --eslint --src-dir --use-npm --disable-git --yes"
       }
     ],
+    "conventions": [
+      {
+        "from": "conventions/files/layout.tsx",
+        "to": "<% frontend.route_dir %>/layout.tsx",
+        "phase": "post"
+      }
+    ],
     "env": {
       "NEXT_PUBLIC_API_URL": "http://localhost:<% backend.dev_port %>"
     }

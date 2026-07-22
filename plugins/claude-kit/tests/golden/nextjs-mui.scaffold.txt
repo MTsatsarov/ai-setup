@@ -1,0 +1,37 @@
+Would scaffold into /tmp/kit-golden
+
+Written first (1) — commands below depend on these:
+  package.json
+
+Commands (9) — run in order, stopping at the first failure:
+   1. npx -y @nestjs/cli@latest new apps/api --skip-git --skip-install --package-manager npm
+      note: creates apps/api under the root workspaces package.json written in the pre phase
+   2. npm install --workspaces --include-workspace-root
+   3. npm install --workspace apps/api @nestjs/swagger class-validator class-transformer
+   4. rm -f apps/api/src/app.controller.ts apps/api/src/app.service.ts apps/api/src/app.controller.spec.ts
+      note: the CLI's sample controller/service are replaced by the first real feature; the app.module.ts convention below drops the imports they left behind
+   5. npm install --workspace apps/api drizzle-orm pg
+   6. npm install --workspace apps/api -D drizzle-kit @types/pg
+   7. mkdir -p apps
+      note: create-next-app refuses to write into a path whose parent does not exist
+   8. npx create-next-app@latest apps/web --ts --app --tailwind --eslint --src-dir --use-npm --disable-git --yes
+   9. npm --prefix apps/web install @mui/material @emotion/react @emotion/styled @mui/material-nextjs
+
+Convention files (11) — rendered from the library, then written:
+  apps/api/src/main.ts
+  apps/api/src/app.module.ts
+  apps/api/src/common/dto/pagination-query.dto.ts
+  apps/api/drizzle.config.ts
+  apps/api/tsconfig.build.json
+  apps/api/src/db/schema/_shared.ts
+  apps/api/src/db/schema/index.ts
+  apps/api/src/common/db/drizzle.module.ts
+  apps/api/src/common/crud/crud.service.ts
+  apps/web/src/app/layout.tsx
+  apps/web/src/theme.ts
+
+Environment (.env.example, 2 key(s)):
+  DATABASE_URL
+  NEXT_PUBLIC_API_URL
+
+Nothing was written — this was --dry-run.

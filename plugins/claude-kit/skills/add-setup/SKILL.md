@@ -42,8 +42,8 @@ Look for evidence, and record which file each conclusion came from:
 |---|---|
 | `backend-framework` | `@nestjs/core` in a `package.json`; a `.csproj`/`.sln`; `Volo.Abp.*` packages |
 | `orm` | `drizzle-orm` + `drizzle.config.ts`; `Microsoft.EntityFrameworkCore`; a `Migrations/` or `drizzle/` folder |
-| `frontend-framework` | `next` + an `app/` directory; `@angular/core` + `angular.json` |
-| `ui-kit` | `components.json` + `tailwindcss`; `primeng` |
+| `frontend-framework` | `next` + an `app/` directory; `react` + `vite.config.*` and no `next` (React/Vite SPA); `@angular/core` + `angular.json` |
+| `ui-kit` | `components.json` + `tailwindcss` (shadcn); `@mui/material` (Material UI); `primeng` |
 | `auth` | `passport`/`jsonwebtoken`; ABP account modules |
 | `tracker` | task ids in recent commit messages (`git log --oneline -30`) |
 

@@ -1,6 +1,6 @@
 {
   "name": "claude-kit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Interview-driven project generator — scaffolds the application with the stack's own CLIs and assembles a matching .claude/ payload from composable per-axis fragments.",
   "author": {
     "name": "Mihail Tsatsariv",

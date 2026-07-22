@@ -1,0 +1,1 @@
+- **Frontend:** <% frontend-framework.name %> — client-rendered SPA, source at `<% frontend-framework.src_dir %>`, styled with <% ui-kit.name %>

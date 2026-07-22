@@ -1,0 +1,17 @@
+{
+  "$comment": "Pins the new React (Vite) frontend with shadcn extended to Vite. Exercises shadcn init on the Vite baseline (root-tsconfig baseUrl + @ alias) and the <> provider fragments.",
+  "project": {
+    "name": "React Shadcn",
+    "notification_title": "react-shadcn"
+  },
+  "answers": {
+    "backend-framework": "aspnet-core",
+    "orm": "efcore",
+    "frontend-framework": "react-vite",
+    "ui-kit": "shadcn",
+    "auth": "jwt",
+    "authz": "rbac",
+    "tracker": "jira",
+    "mapping": "automapper"
+  }
+}

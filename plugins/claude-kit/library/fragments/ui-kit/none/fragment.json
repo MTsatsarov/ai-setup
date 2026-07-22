@@ -4,11 +4,17 @@
   "axis": "ui-kit",
   "label": "No UI kit",
   "description": "Plain markup, no component library.",
-  "$comment": "Provides no frontend-components slot — there is no component library to document. It must still contribute the frontend-forms #ui anchor, because that anchor is not optional; it delegates to the framework's own plain_field, since plain markup differs between JSX and Angular templates and only the framework knows which it is.",
+  "$comment": "Provides no frontend-components slot — there is no component library to document. It must still contribute the frontend-forms #ui anchor, because that anchor is not optional; it delegates to the framework's own plain_field, since plain markup differs between JSX and Angular templates and only the framework knows which it is. The react_/next_provider_* vars are empty fragments: the React main.tsx and Next.js layout.tsx always reference a ui-kit provider wrapper, so a plain project wraps the app in a no-op <> instead.",
   "vars": {
     "name": "none",
     "ng_submit": "<button type=\"submit\" [disabled]=\"form.invalid || saving\">Save</button>",
-    "submit_button": "button"
+    "submit_button": "button",
+    "react_provider_imports": "",
+    "react_provider_open": "<>",
+    "react_provider_close": "</>",
+    "next_provider_imports": "",
+    "next_provider_open": "<>",
+    "next_provider_close": "</>"
   },
   "contributes": {
     "frontend-forms#ui": "sections/forms-ui.md"

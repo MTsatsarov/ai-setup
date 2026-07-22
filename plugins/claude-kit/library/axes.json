@@ -42,14 +42,14 @@
       "header": "Frontend",
       "question": "Which frontend framework?",
       "required": true,
-      "options": ["nextjs-app", "angular", "none"]
+      "options": ["nextjs-app", "react-vite", "angular", "none"]
     },
     {
       "id": "ui-kit",
       "header": "UI kit",
       "question": "Which UI component library?",
       "required": true,
-      "options": ["shadcn", "primeng", "none"]
+      "options": ["shadcn", "mui", "primeng", "none"]
     },
     {
       "id": "tracker",
