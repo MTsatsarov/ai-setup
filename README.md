@@ -1,7 +1,7 @@
 # ai-setup
 
-A Claude Code marketplace holding **claude-kit** — an interview-driven generator for
-per-project `.claude/` setups.
+A Claude Code marketplace holding **claude-kit** — an interview-driven generator that
+scaffolds a new project's running application *and* its matching per-project `.claude/` setup.
 
 ## Why
 
@@ -53,23 +53,61 @@ in without forking the NestJS body.
 
 | Axis | Options |
 |---|---|
-| `backend-framework` | `nestjs` |
-| `orm` | `drizzle` |
-| `frontend-framework` | `nextjs-app`, `angular`, `none` |
-| `ui-kit` | `shadcn`, `primeng`, `none` |
-| `auth` | `session-jwt`, `none` |
-| `authz` | `none` |
+| `backend-framework` | `nestjs`, `aspnet-core` |
+| `orm` | `drizzle`, `efcore` |
+| `auth` | `jwt`, `cookie-session`, `none` |
+| `authz` | `rbac`, `none` |
+| `mapping` | `automapper`, `mapster`, `manual` |
+| `frontend-framework` | `nextjs-app`, `react-vite`, `angular`, `none` |
+| `ui-kit` | `shadcn`, `mui`, `primeng`, `none` |
 | `tracker` | `clickup`, `jira`, `none` |
 
-Backend slots: `backend-entities`, `backend-migrations`, `backend-models`,
-`backend-service` (emitted as `backend-module`), `backend-code-quality`.
+`/claude-kit:new-project` **scaffolds the running application** (via the stack's own CLIs —
+`nest new`, `dotnet new`, `create-next-app`, `create vite`, `ng new`) **and** generates the
+matching `.claude/` payload. `tests/run.sh` resolves + renders every one of the **648** legal
+axis combinations.
 
-Frontend axes are asked and feed `CLAUDE.md`, but own no skill bodies yet.
-`abp-dotnet` + `efcore` are next; frontend slots and the workflow skills
-(`plan-task`, `implement-plan`, `pr`, …) follow.
+### Skills each answer generates
 
-Application-code scaffolding (`nest new`, `dotnet new abp`) is **not** implemented —
-today claude-kit generates the `.claude/` payload only.
+Two agents, each dropped when its axis is `none`: **`backend-developer`**
+(`backend-framework`) and **`frontend-developer`** (`frontend-framework`). An agent's
+`skills:` list is exactly the skills in its group — kept in one place, so it cannot drift.
+
+**Backend** (under `backend-developer`):
+
+| Skill | Owned by | Emitted when |
+|---|---|---|
+| `backend-entities` | orm | always |
+| `backend-migrations` | orm | always |
+| `backend-models` | backend-framework (+ mapping) | always |
+| `backend-service` / `backend-module` | backend-framework | always — NestJS renames it to `backend-module` (controller+service+module folded together); ASP.NET keeps `backend-service` |
+| `backend-controller` | backend-framework | ASP.NET only (NestJS folds the HTTP layer into `backend-module`) |
+| `backend-code-quality` | backend-framework (+ orm, authz) | always |
+| `backend-permissions` | authz (+ framework) | only when `authz = rbac` |
+
+→ NestJS = **5** skills (6 with RBAC); ASP.NET = **6** (7 with RBAC).
+
+**Frontend** (under `frontend-developer`):
+
+| Skill | Owned by | Emitted when |
+|---|---|---|
+| `frontend-api-client` | frontend-framework | always |
+| `frontend-pages` | frontend-framework | always |
+| `frontend-forms` | frontend-framework (+ ui-kit) | always |
+| `frontend-components` | ui-kit | only when `ui-kit ≠ none` |
+
+→ with a UI kit = **4** skills; `ui-kit = none` = **3**; `frontend = none` = **0** and no frontend agent.
+
+Skill *bodies* vary by choice: `frontend-pages` teaches App Router / React Router / Angular
+routing; `frontend-components` teaches shadcn copy-in / MUI `sx`+theme / PrimeNG modules;
+`backend-entities` is the Drizzle or the EF Core version — same filename, different content.
+`auth`, `mapping` and `tracker` shape the skills above (and `CLAUDE.md`) through injected
+sections rather than owning a skill of their own.
+
+The floor is **0 skills** (backend + frontend both `none`); the ceiling is **11** (ASP.NET +
+RBAC + any real frontend + any real UI kit).
+
+Deferred: mobile axes and the workflow skills (`plan-task`, `implement-plan`, `pr`, …).
 
 ## Repo layout
 
@@ -79,11 +117,12 @@ plugins/claude-kit/
   .claude-plugin/plugin.json
   skills/{new-project,add-setup,doctor}/SKILL.md   the plugin's own commands
   scripts/{resolve,render,validate-library}.mjs    resolve owns every rule
+  scripts/scaffold.mjs                             runs the app CLIs + convention files
   scripts/lib/{erb,library}.mjs
   library/axes.json                                the interview
   library/slots.json                               slot -> owning axis
   library/base/                                    CLAUDE.md, agent, hook templates
-  library/fragments/<axis>/<option>/               fragment.json + slots/ + sections/
+  library/fragments/<axis>/<option>/               fragment.json + slots/ + sections/ + conventions/
   tests/                                           fixtures, golden trees, runner
 ```
 
