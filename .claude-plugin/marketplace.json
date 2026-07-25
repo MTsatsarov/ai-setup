@@ -2,7 +2,7 @@
   "name": "ai-setup",
   "description": "Claude Code project setup tooling — interview-driven scaffolding and .claude/ payload generation",
   "owner": {
-    "name": "Mihail Tsatsariv",
+    "name": "Mihail Tsatsarov",
     "email": "mihailtsatsarov92@gmail.com"
   },
   "plugins": [

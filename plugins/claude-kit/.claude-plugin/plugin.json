@@ -1,9 +1,14 @@
 {
   "name": "claude-kit",
+  "displayName": "Claude Kit",
   "description": "Interview-driven project generator — scaffolds the application with the stack's own CLIs and assembles a matching .claude/ payload from composable per-axis fragments.",
   "author": {
-    "name": "Mihail Tsatsariv",
-    "email": "mihailtsatsarov92@gmail.com"
+    "name": "Mihail Tsatsarov",
+    "email": "mihailtsatsarov92@gmail.com",
+    "url": "https://github.com/MTsatsarov"
   },
+  "homepage": "https://github.com/MTsatsarov/ai-setup#readme",
+  "repository": "https://github.com/MTsatsarov/ai-setup",
+  "license": "MIT",
   "keywords": ["scaffold", "bootstrap", "skills", "agents", "generator"]
 }
