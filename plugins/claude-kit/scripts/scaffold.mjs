@@ -170,9 +170,10 @@ function runCommands(sp, from) {
 }
 
 /**
- * Convention files are TEMPLATES, not static copies — 5 of the 11 in the
- * library contain <% %> tags (namespaces, project names). Rendering them here
- * with the strict backstop is what keeps a stray tag out of a .cs file.
+ * Convention files are TEMPLATES, not static copies — many of them contain
+ * <% %> tags (namespaces, project names, and the mapping-axis vars that decide
+ * whether CrudService.cs speaks AutoMapper, Mapster or neither). Rendering them
+ * here with the strict backstop is what keeps a stray tag out of a .cs file.
  */
 function writeConventions(list, vars) {
   const created = [];

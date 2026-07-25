@@ -5,9 +5,21 @@
   "label": "AutoMapper profiles",
   "description": "Convention-based mapping with per-feature Profile classes. ProjectTo pushes the projection into SQL so only the DTO's columns are selected.",
   "requires": { "backend-framework": ["aspnet-core"] },
+  "$comment": "The crud_* vars are consumed by orm/efcore's CrudService.cs template. All three mapping fragments must define the SAME keys — erb throws on a missing path, and \"\" is falsy, which is how the template skips a block.",
+
   "vars": {
     "name": "AutoMapper",
-    "quality_checks": ["Reads use `ProjectTo<TDto>` rather than loading entities and mapping in memory"]
+    "quality_checks": ["Reads use `ProjectTo<TDto>` rather than loading a collection of entities and mapping it in memory"],
+    "crud_usings": "using AutoMapper;\nusing AutoMapper.QueryableExtensions;",
+    "crud_ctor_params": "AppDbContext db, IMapper mapper",
+    "crud_ctor_args": "db, mapper",
+    "crud_mapper_member": "    protected IMapper Mapper { get; } = mapper;",
+    "crud_listing_projection": ".ProjectTo<TListItem>(Mapper.ConfigurationProvider)",
+    "crud_map_create": "Mapper.Map<TEntity>(input)",
+    "crud_map_update": "Mapper.Map(input, entity)",
+    "crud_abstract_hooks": "",
+    "crud_derived_hooks": "",
+    "crud_details_read": "QueryById(id).ProjectTo<EntityNameDetails>(Mapper.ConfigurationProvider).FirstOrDefaultAsync(ct)"
   },
   "contributes": {
     "backend-models#mapping": "sections/models-mapping.md",

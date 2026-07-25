@@ -28,9 +28,10 @@ Commands (16) — run in order, stopping at the first failure:
   15. npx shadcn@latest init -d -y
   16. npm --prefix apps/web install @base-ui/react class-variance-authority clsx tailwind-merge tw-animate-css shadcn @fontsource-variable/geist lucide-react
 
-Convention files (7) — rendered from the library, then written:
+Convention files (8) — rendered from the library, then written:
   src/ReactShadcn.Api/Common/Entities/AuditedEntity.cs
-  src/ReactShadcn.Api/Common/Models/PaginationQuery.cs
+  src/ReactShadcn.Api/Common/Models/Pagination.cs
+  src/ReactShadcn.Api/Common/Models/QueryableFilterExtensions.cs
   src/ReactShadcn.Api/Properties/launchSettings.json
   src/ReactShadcn.Api/Common/Data/AppDbContext.cs
   src/ReactShadcn.Api/Common/Services/CrudService.cs

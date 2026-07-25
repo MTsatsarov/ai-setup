@@ -9,9 +9,10 @@ description: Use when creating or modifying request/response DTOs in a feature's
 DTOs live in the `dto/` folder within each feature (`apps/api/src/<feature>/dto/`). Request DTOs are validated by class-validator (via the global `ValidationPipe`) and transformed by class-transformer. Responses are shaped either by a partial `select` or a small mapper — never by returning raw table rows.
 
 ## Roles
-- **Create/Update DTOs** — validated input (DTO → persisted data). Decorate every field.
+- **Create/Update DTOs** — validated input (DTO → persisted data). Decorate every field. The
+  update DTO carries the `id`, because the CRUD base reads it off the model; a create DTO never does.
 - **Response DTOs** — the public shape returned to clients (record → DTO). Expose via `@ApiProperty` for Swagger; keep audit/soft-delete internals out.
-- **Pagination DTO** — a shared base every list query extends.
+- **Pagination DTO** — extends `BasePaginatedRequestDto`, adding only what the generic filters cannot express.
 
 ## Templates
 
@@ -36,10 +37,17 @@ export class CreateEntityNameDto {
 ```typescript
 // apps/api/src/entity-name/dto/update-entity-name.dto.ts
 import { PartialType } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsUUID } from 'class-validator';
 import { CreateEntityNameDto } from './create-entity-name.dto';
 
-// All fields optional; validation decorators are inherited.
-export class UpdateEntityNameDto extends PartialType(CreateEntityNameDto) {}
+// All create fields optional; validation decorators are inherited. The id is
+// required and not optional — the CRUD base reads it off the model.
+export class UpdateEntityNameDto extends PartialType(CreateEntityNameDto) {
+  @ApiProperty()
+  @IsUUID()
+  id: string;
+}
 ```
 
 ```typescript
@@ -71,47 +79,61 @@ export class EntityNameListingResponseDto {
 ```
 
 ```typescript
-// apps/api/src/common/dto/pagination-query.dto.ts
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+// apps/api/src/common/dto/base-paginated-request.dto.ts   (shape — read the file for the decorators)
+export enum FilterOperator {
+  Equals, NotEquals, Contains, StartsWith,
+  GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual,
+  In, IsNull, IsNotNull,
+}
 
-export class PaginationQueryDto {
-  @ApiPropertyOptional({ default: 0 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  skip = 0;
+export class FilterDescriptorDto {
+  field: string;
+  operator: FilterOperator = FilterOperator.Equals;
+  value?: string;              // parsed to the column's type; comma-separated for In
+}
 
-  @ApiPropertyOptional({ default: 20 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  take = 20;
+export class SortDescriptorDto {
+  field: string;
+  descending = false;
+}
+
+export class BasePaginatedRequestDto {
+  page = 1;                    // @Min(1)
+  pageSize = 20;               // @Min(1) @Max(200)
+  filters: FilterDescriptorDto[] = [];
+  sorters: SortDescriptorDto[] = [];
+  get skip(): number { return (this.page - 1) * this.pageSize; }
+}
+
+export interface PagedResult<T> {
+  items: T[]; total: number; page: number; pageSize: number; totalPages: number;
 }
 ```
+
+`field` is not free-form: it is matched against the service's `filterable`/`sortable` allowlist,
+and anything else is a 400. See the module skill.
 
 ```typescript
 // apps/api/src/entity-name/dto/entity-name-pagination.dto.ts
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID } from 'class-validator';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsOptional } from 'class-validator';
+import { BasePaginatedRequestDto } from '../../common/dto/base-paginated-request.dto';
 
-export class EntityNamePaginationDto extends PaginationQueryDto {
+// page, pageSize, filters and sorters come from the base. Add a property here
+// only for a filter the descriptors cannot express — one the service reads in
+// applyCustomFilters. Ordinary column filters need no property at all.
+export class EntityNamePaginationDto extends BasePaginatedRequestDto {
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  name?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsUUID()
-  relatedEntityId?: string;
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  mineOnly?: boolean;
 }
 ```
+
+Note the `@Transform` rather than `@Type(() => Boolean)`: `Boolean('false')` is `true`, so
+`@Type` would make a boolean query param impossible to turn off.
 
 ## Response shaping
 

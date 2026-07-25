@@ -10,14 +10,14 @@ the controller's policy, so put the restrictive default on the class:
 public class EntityNamesController(IEntityNameService service) : ControllerBase
 {
     [HttpGet]
-    public Task<PagedResult<EntityNameListItem>> List([FromQuery] EntityNameQuery query, CancellationToken ct) =>
-        service.ListAsync(query, ct);
+    public Task<PagedResult<EntityNameListItem>> List([FromQuery] EntityNameQuery request, CancellationToken ct) =>
+        service.GetListingAsync(request, ct);
 
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = Roles.Admin)]   // narrower than the controller default
-    public async Task<IActionResult> Remove(Guid id, CancellationToken ct)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        await service.RemoveAsync(id, ct);
+        await service.DeleteAsync(id, ct);
         return NoContent();
     }
 }

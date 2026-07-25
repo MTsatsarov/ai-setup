@@ -30,8 +30,8 @@ A controller lives beside the service it calls, under
 public class EntityNamesController(IEntityNameService service) : ControllerBase
 {
     [HttpGet]
-    public Task<PagedResult<EntityNameListItem>> List([FromQuery] EntityNameQuery query, CancellationToken ct) =>
-        service.ListAsync(query, ct);
+    public Task<PagedResult<EntityNameListItem>> List([FromQuery] EntityNameQuery request, CancellationToken ct) =>
+        service.GetListingAsync(request, ct);
 
     [HttpGet("{id:guid}")]
     public Task<EntityNameDetails> Get(Guid id, CancellationToken ct) =>
@@ -40,25 +40,48 @@ public class EntityNamesController(IEntityNameService service) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<EntityNameDetails>> Create([FromBody] CreateEntityNameRequest input, CancellationToken ct)
     {
-        var created = await service.CreateAsync(input, ct);
-        return CreatedAtAction(nameof(Get), new { id = created.Id }, await service.GetAsync(created.Id, ct));
+        var id = await service.CreateAsync(input, ct);
+        return CreatedAtAction(nameof(Get), new { id }, await service.GetAsync(id, ct));
     }
 
     [HttpPut("{id:guid}")]
     public async Task<EntityNameDetails> Update(Guid id, [FromBody] UpdateEntityNameRequest input, CancellationToken ct)
     {
-        await service.UpdateAsync(id, input, ct);
+        // The id is in both the route and the body. They must agree, or the request
+        // is claiming to update one row while naming another.
+        if (id != input.Id)
+        {
+            throw new InvalidOperationException($"Route id {id} does not match body id {input.Id}.");
+        }
+
+        await service.UpdateAsync(input, ct);
         return await service.GetAsync(id, ct);
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Remove(Guid id, CancellationToken ct)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        await service.RemoveAsync(id, ct);
+        await service.DeleteAsync(id, ct);
         return NoContent();
     }
 }
 ```
+
+## Binding a paginated request
+
+`EntityNameQuery` extends `BasePaginatedRequest`, so `[FromQuery]` binds `Page` and `PageSize`
+directly and the descriptor lists by index:
+
+```
+GET /entity-names
+  ?Page=2&PageSize=20
+  &Filters[0].Field=Name&Filters[0].Operator=Contains&Filters[0].Value=acme
+  &Filters[1].Field=Status&Filters[1].Operator=Equals&Filters[1].Value=Active
+  &Sorters[0].Field=CreatedAt&Sorters[0].Descending=true
+```
+
+The indexed form is the model binder's convention for a collection of complex types, and it is
+not guessable — document it in the endpoint's Swagger summary for anyone writing a client by hand.
 
 ## Rules
 
@@ -87,12 +110,16 @@ to the request-aborted token, so a client that disconnects stops the database wo
 | List / Get | 200 | Get 404s via the service's `KeyNotFoundException` |
 | Create | 201 | `CreatedAtAction` sets `Location` to the new resource |
 | Update | 200 | Return the updated representation |
-| Remove | 204 | `NoContent()` — no body |
+| Delete | 204 | `NoContent()` — no body |
+
+A filter naming a field the service did not allowlist throws `InvalidOperationException` and
+becomes a 400, in the middleware — the controller does not check it.
 
 ## Checklist
 - [ ] `[ApiController]` with attribute routing and `{id:guid}` constraints
 - [ ] Constructor takes the service **interface**
 - [ ] Every action takes and forwards a `CancellationToken`
 - [ ] No business logic, no `try`/`catch`, no `ModelState` check
-- [ ] `Create` returns `CreatedAtAction`; `Remove` returns `NoContent`
+- [ ] `Update` rejects a route id that disagrees with the body id
+- [ ] `Create` returns `CreatedAtAction`; `Delete` returns `NoContent`
 - [ ] Route is plural kebab-case

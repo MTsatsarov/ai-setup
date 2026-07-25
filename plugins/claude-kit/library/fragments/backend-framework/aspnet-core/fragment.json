@@ -18,7 +18,8 @@
     "claude_rules": [
       "Backend and frontend are **separate concerns** — never mix them in a single agent",
       "No business logic in controllers — controllers delegate to a scoped service",
-      "Request models are validated before the service is reached; services assume valid input"
+      "Request models are validated before the service is reached; services assume valid input",
+      "A listing endpoint's query surface is exactly what the service's `Filterable`/`Sortable` allowlists declare — never widen one without meaning to"
     ]
   },
 
@@ -64,7 +65,8 @@
     ],
     "conventions": [
       { "from": "conventions/files/AuditedEntity.cs", "to": "<% backend.common_dir %>/Entities/AuditedEntity.cs" },
-      { "from": "conventions/files/PaginationQuery.cs", "to": "<% backend.common_dir %>/Models/PaginationQuery.cs" },
+      { "from": "conventions/files/Pagination.cs", "to": "<% backend.common_dir %>/Models/Pagination.cs" },
+      { "from": "conventions/files/QueryableFilterExtensions.cs", "to": "<% backend.common_dir %>/Models/QueryableFilterExtensions.cs" },
       { "from": "conventions/files/launchSettings.json", "to": "<% backend.src_dir %>/Properties/launchSettings.json" }
     ]
   },

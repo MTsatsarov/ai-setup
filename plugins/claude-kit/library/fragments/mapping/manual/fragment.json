@@ -4,11 +4,23 @@
   "axis": "mapping",
   "label": "Manual mapping (explicit select / mapper functions)",
   "description": "No mapping library. Reads select the response shape directly; anything computed goes through a small pure mapper function. Most explicit, zero magic, more typing.",
+  "$comment": "The crud_* vars are consumed by orm/efcore's CrudService.cs template. All three mapping fragments must define the SAME keys \u2014 erb throws on a missing path, and \"\" is falsy, which is how the template skips a block. This fragment is also the auto-selected mapping for NestJS, where the crud_* vars simply go unread.",
+
   "vars": {
     "name": "manual mapping",
     "quality_checks": [
       "Reads select the response shape directly \u2014 never load a full row and discard most of it"
-    ]
+    ],
+    "crud_usings": "",
+    "crud_ctor_params": "AppDbContext db",
+    "crud_ctor_args": "db",
+    "crud_mapper_member": "",
+    "crud_listing_projection": ".Select(Projection)",
+    "crud_map_create": "ToEntity(input)",
+    "crud_map_update": "Apply(input, entity)",
+    "crud_derived_hooks": "    protected override Expression<Func<EntityName, EntityNameListItem>> Projection =>\n        e => new EntityNameListItem(e.Id, e.Name, e.RelatedEntity!.Name);\n\n    protected override EntityName ToEntity(CreateEntityNameRequest input) =>\n        new() { Name = input.Name, RelatedEntityId = input.RelatedEntityId };\n\n    protected override void Apply(UpdateEntityNameRequest input, EntityName entity)\n    {\n        entity.Name = input.Name;\n        entity.RelatedEntityId = input.RelatedEntityId;\n    }",
+    "crud_abstract_hooks": "    /// The listing projection. Runs in SQL, so it may only contain what EF Core\n    /// can translate \u2014 no method calls on the entity.\n    protected abstract Expression<Func<TEntity, TListItem>> Projection { get; }\n\n    protected abstract TEntity ToEntity(TCreateRequest input);\n\n    protected abstract void Apply(TUpdateRequest input, TEntity entity);",
+    "crud_details_read": "QueryById(id).Select(e => new EntityNameDetails(e.Id, e.Name, e.RelatedEntityId, e.RelatedEntity!.Name, e.CreatedAt)).FirstOrDefaultAsync(ct)"
   },
   "contributes": {
     "backend-models#mapping": "sections/models-mapping.md",

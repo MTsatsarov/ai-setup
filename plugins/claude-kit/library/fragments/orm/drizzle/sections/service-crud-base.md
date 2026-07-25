@@ -1,85 +1,85 @@
 ## Reusable CRUD base
 
-Put shared CRUD plumbing in `<% backend.common_dir %>/crud/`. The base service centralizes
-soft-delete-aware Drizzle access so no feature service re-implements it.
+Shared CRUD plumbing lives in `<% backend.common_dir %>/crud/`. The base is soft-delete-aware,
+generic in the table, its key and the four models a feature exposes, and it applies paging,
+filtering and sorting for you.
 
 ```typescript
-// <% backend.common_dir %>/crud/crud.service.ts
-import { NotFoundException } from '@nestjs/common';
-import { and, eq, SQL } from 'drizzle-orm';
-import { PgColumn, PgTable } from 'drizzle-orm/pg-core';
-import type { Database } from '../db/drizzle.module';
+// <% backend.common_dir %>/crud/crud.service.ts  (shape — read the file for the internals)
+export type CrudTable = PgTable & { id: PgColumn; isDeleted: PgColumn; createdAt: PgColumn };
 
-// Any pgTable carrying the id + isDeleted columns this base relies on.
-export type CrudTable = PgTable & { id: PgColumn; isDeleted: PgColumn };
-
-export abstract class CrudService<TTable extends CrudTable> {
+export abstract class CrudService<
+  TTable extends CrudTable,
+  TId,
+  TCreate,
+  TUpdate extends { id: TId },
+  TListRequest extends BasePaginatedRequestDto,
+  TListItem,
+> {
   protected abstract readonly table: TTable;
+
+  // Columns a client may filter/sort on, keyed by the name the client sends.
+  protected readonly filterable: Record<string, PgColumn> = {};
+  protected readonly sortable: Record<string, PgColumn> = {};
 
   constructor(protected readonly db: Database) {}
 
-  // Drizzle's query-builder types are conditional on a *concrete* table, so
-  // they cannot resolve against an unresolved generic. The cast is confined to
-  // this accessor; every public signature below stays typed via $inferSelect /
-  // $inferInsert, so callers lose nothing.
-  private get t(): any {
-    return this.table;
-  }
+  protected abstract toListItem(row: TTable['$inferSelect']): TListItem;
 
-  private get notDeleted(): SQL | undefined {
-    return eq(this.table.isDeleted, false);
-  }
+  protected applyCustomFilters(request: TListRequest): SQL | undefined;
 
-  findAll(extra?: SQL): Promise<TTable['$inferSelect'][]> {
-    return this.db.select().from(this.t).where(and(this.notDeleted, extra));
-  }
+  getListing(request: TListRequest): Promise<PagedResult<TListItem>>;
+  create(input: TCreate): Promise<TId>;
+  update(input: TUpdate): Promise<TId>;   // id travels on the model
+  delete(id: TId): Promise<void>;         // soft delete
 
-  async findOne(id: string): Promise<TTable['$inferSelect']> {
-    const rows: TTable['$inferSelect'][] = await this.db
-      .select()
-      .from(this.t)
-      .where(and(this.notDeleted, eq(this.table.id, id)))
-      .limit(1);
-    if (!rows[0]) {
-      throw new NotFoundException(`Not found: ${id}`);
-    }
-    return rows[0];
-  }
-
-  async create(data: TTable['$inferInsert']): Promise<TTable['$inferSelect']> {
-    // insert().returning() widens to `any[] | QueryResult<never>`; the assertion
-    // narrows it back rather than letting the union leak into the public type.
-    const rows = (await this.db.insert(this.t).values(data).returning()) as TTable['$inferSelect'][];
-    return rows[0];
-  }
-
-  async update(
-    id: string,
-    data: Partial<TTable['$inferInsert']>,
-  ): Promise<TTable['$inferSelect']> {
-    const rows: TTable['$inferSelect'][] = await this.db
-      .update(this.t)
-      .set(data)
-      .where(and(this.notDeleted, eq(this.table.id, id)))
-      .returning();
-    if (!rows[0]) {
-      throw new NotFoundException(`Not found: ${id}`);
-    }
-    return rows[0];
-  }
-
-  // Soft delete — sets isDeleted rather than removing the row.
-  async remove(id: string): Promise<void> {
-    await this.db
-      .update(this.t)
-      .set({ isDeleted: true })
-      .where(and(this.notDeleted, eq(this.table.id, id)));
-  }
+  protected findOne(id: TId): Promise<TTable['$inferSelect']>;   // throws NotFoundException
 }
 ```
 
-**Do not** write `const [row] = await ...` against these builders, and do not spread
-`as any` across each call. Both compile-fail on current `drizzle-orm`: destructuring hits
-`Type '... | QueryResult<never>' must have a '[Symbol.iterator]()' method`, and a
-per-call `as any` discards the inferred row type. Index with `rows[0]` and keep the cast
-in the `t` accessor.
+### The four methods
+
+| Method | Takes | Returns |
+|---|---|---|
+| `getListing` | `TListRequest` (a `BasePaginatedRequestDto`) | `PagedResult<TListItem>` |
+| `create` | `TCreate` | the new `TId` |
+| `update` | `TUpdate` (carries the id) | the `TId` |
+| `delete` | `TId` | nothing — sets `isDeleted` |
+
+Writes return the **id**, not the row. A row is a persistence concern, and handing one back invites
+it into a response payload. A caller that needs the saved record reads it back — start from the
+base's `findOne`, which already excludes soft-deleted rows and throws `NotFoundException`.
+
+### Filtering and sorting
+
+`BasePaginatedRequestDto` carries `page`, `pageSize`, `filters` and `sorters`. The base applies all
+three, but **only over columns the service allowlists**:
+
+```typescript
+protected readonly filterable = { name: entityNames.name, status: entityNames.status };
+protected readonly sortable = { name: entityNames.name, createdAt: entityNames.createdAt };
+```
+
+The keys are the names clients send; the values are the actual columns. Both maps are empty by
+default, so a new listing exposes no query surface until it says so — adding a column to a table
+never silently adds a filter to its API. A field outside the map throws `BadRequestException` → 400.
+
+Sorting is always a **total order**: your sorters, then `createdAt` descending if you supplied none,
+then `id`. That last clause is not decoration — without it two rows with equal sort keys can swap
+between requests, and the client sees one row twice while never seeing another.
+
+For anything the descriptors cannot express — a join, a computed predicate, tenant scoping —
+override `applyCustomFilters`. It composes with the descriptors rather than replacing them:
+
+```typescript
+protected applyCustomFilters(request: EntityNamePaginationDto): SQL | undefined {
+  return request.mineOnly ? eq(entityNames.ownerId, this.currentUserId) : undefined;
+}
+```
+
+`Contains` and `StartsWith` compile to `ILIKE`, which is case-insensitive in Postgres, and `%`/`_`
+in the client's value are escaped so a search for `50%` finds the literal characters.
+
+`getListing` selects the full row and maps it through `toListItem`. That is right for a page of at
+most a few hundred rows. A listing that must avoid loading wide columns should write its own query
+with an explicit `select({ ... })` rather than going through the base.

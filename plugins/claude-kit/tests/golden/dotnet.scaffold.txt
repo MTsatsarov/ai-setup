@@ -19,9 +19,10 @@ Commands (12) — run in order, stopping at the first failure:
   11. npx -y @angular/cli@latest new demo-crm-web --directory angular --routing --style=scss --skip-git --package-manager npm --defaults
   12. npm install primeng @primeuix/themes @angular/animations
 
-Convention files (6) — rendered from the library, then written:
+Convention files (7) — rendered from the library, then written:
   src/DemoCRM.Api/Common/Entities/AuditedEntity.cs
-  src/DemoCRM.Api/Common/Models/PaginationQuery.cs
+  src/DemoCRM.Api/Common/Models/Pagination.cs
+  src/DemoCRM.Api/Common/Models/QueryableFilterExtensions.cs
   src/DemoCRM.Api/Properties/launchSettings.json
   src/DemoCRM.Api/Common/Data/AppDbContext.cs
   src/DemoCRM.Api/Common/Services/CrudService.cs

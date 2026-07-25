@@ -36,13 +36,18 @@ It is **scoped** — one instance per request. Any service holding it must also 
 
 ## Reusable CRUD base
 
-Put shared CRUD plumbing in `src/ReactShadcn.Api/Common/Services/`. The base is soft-delete-aware and
-projects reads straight to the DTO, so only the selected columns leave the database.
+Shared CRUD plumbing lives in `src/ReactShadcn.Api/Common/Services/`. The base is soft-delete-aware,
+generic in the entity, its key and the four models a feature exposes, and it applies paging,
+filtering and sorting for you.
 
 ```csharp
 // src/ReactShadcn.Api/Common/Services/CrudService.cs
-public abstract class CrudService<TEntity>(AppDbContext db, IMapper mapper)
-    where TEntity : AuditedEntity
+public abstract class CrudService<TEntity, TId, TCreateRequest, TUpdateRequest, TListRequest, TListItem>(
+    AppDbContext db, IMapper mapper)
+    where TEntity : class, IEntity<TId>, ISoftDelete
+    where TId : IEquatable<TId>
+    where TUpdateRequest : IHasId<TId>
+    where TListRequest : BasePaginatedRequest
 {
     protected AppDbContext Db { get; } = db;
     protected IMapper Mapper { get; } = mapper;
@@ -50,70 +55,119 @@ public abstract class CrudService<TEntity>(AppDbContext db, IMapper mapper)
     // The DbContext's global query filter already excludes soft-deleted rows.
     protected IQueryable<TEntity> Query => Db.Set<TEntity>().AsNoTracking();
 
-    public async Task<PagedResult<TDto>> ListAsync<TDto>(
-        PaginationQuery query,
-        IQueryable<TEntity>? filtered = null,
-        CancellationToken ct = default)
+    /// Untracked, narrowed to one row — the starting point for a details read.
+    protected IQueryable<TEntity> QueryById(TId id) => Query.Where(ById(id));
+
+    protected virtual IEnumerable<string> Filterable => [];
+    protected virtual IEnumerable<string> Sortable => [];
+
+    protected virtual IQueryable<TEntity> ApplyCustomFilters(IQueryable<TEntity> source, TListRequest request) =>
+        source;
+
+    public async Task<PagedResult<TListItem>> GetListingAsync(TListRequest request, CancellationToken ct = default)
     {
-        var source = filtered ?? Query;
+        var source = ApplyCustomFilters(Query, request).ApplyFilters(request.Filters, FilterableFields);
+
+        // Count before paging, after filtering.
         var total = await source.CountAsync(ct);
+
         var items = await source
-            .Skip(query.Skip)
-            .Take(query.Take)
-            .ProjectTo<TDto>(Mapper.ConfigurationProvider)
+            .ApplySorting(request.Sorters, SortableFields)
+            .Skip(request.Skip)
+            .Take(request.PageSize)
+            .ProjectTo<TListItem>(Mapper.ConfigurationProvider)
             .ToListAsync(ct);
 
-        return new PagedResult<TDto>(items, total);
+        return new PagedResult<TListItem>(items, total, request.Page, request.PageSize);
     }
 
-    public async Task<TDto> GetAsync<TDto>(Guid id, CancellationToken ct = default)
-    {
-        var dto = await Query
-            .Where(e => e.Id == id)
-            .ProjectTo<TDto>(Mapper.ConfigurationProvider)
-            .FirstOrDefaultAsync(ct);
-
-        return dto ?? throw new KeyNotFoundException($"Not found: {id}");
-    }
-
-    public async Task<TEntity> CreateAsync<TInput>(TInput input, CancellationToken ct = default)
+    public async Task<TId> CreateAsync(TCreateRequest input, CancellationToken ct = default)
     {
         var entity = Mapper.Map<TEntity>(input);
         Db.Set<TEntity>().Add(entity);
         await Db.SaveChangesAsync(ct);
-        return entity;
+        return entity.Id;
     }
 
-    public async Task<TEntity> UpdateAsync<TInput>(Guid id, TInput input, CancellationToken ct = default)
+    public async Task<TId> UpdateAsync(TUpdateRequest input, CancellationToken ct = default)
     {
-        var entity = await Db.Set<TEntity>().FirstOrDefaultAsync(e => e.Id == id, ct)
-            ?? throw new KeyNotFoundException($"Not found: {id}");
-
+        var entity = await RequireAsync(input.Id, ct);
         Mapper.Map(input, entity);
         await Db.SaveChangesAsync(ct);
-        return entity;
+        return entity.Id;
     }
 
     /// Soft delete — sets IsDeleted rather than removing the row.
-    public async Task RemoveAsync(Guid id, CancellationToken ct = default)
+    public async Task DeleteAsync(TId id, CancellationToken ct = default)
     {
-        var entity = await Db.Set<TEntity>().FirstOrDefaultAsync(e => e.Id == id, ct)
-            ?? throw new KeyNotFoundException($"Not found: {id}");
-
+        var entity = await RequireAsync(id, ct);
         entity.IsDeleted = true;
         await Db.SaveChangesAsync(ct);
     }
+
+    protected async Task<TEntity> RequireAsync(TId id, CancellationToken ct = default) =>
+        await Db.Set<TEntity>().FirstOrDefaultAsync(ById(id), ct)
+        ?? throw new KeyNotFoundException($"Not found: {id}");
+
+    protected static Expression<Func<TEntity, bool>> ById(TId id) => e => e.Id.Equals(id);
 }
 ```
 
-Note `Query` is `AsNoTracking` — reads never need the change tracker. Writes deliberately re-fetch
-**tracked** via `Db.Set<TEntity>()` so `SaveChangesAsync` sees the modification.
+### The four methods
+
+| Method | Takes | Returns |
+|---|---|---|
+| `GetListingAsync` | `TListRequest` (a `BasePaginatedRequest`) | `PagedResult<TListItem>` |
+| `CreateAsync` | `TCreateRequest` | the new `TId` |
+| `UpdateAsync` | `TUpdateRequest` (carries the id) | the `TId` |
+| `DeleteAsync` | `TId` | nothing — soft delete |
+
+Writes return the **id**, not the entity. An entity is a persistence concern, and handing one back
+invites it into a response payload. A caller that needs the saved row reads it back through the
+feature's own details method.
+
+There is no `GetAsync` on the base: a details read is the one part of CRUD whose shape is genuinely
+per-feature. Start from `QueryById(id)` and project.
+
+### Filtering and sorting
+
+`BasePaginatedRequest` carries `Page`, `PageSize`, `Filters` and `Sorters`. The base applies all
+three, but **only over fields the service allowlists**:
+
+```csharp
+protected override IEnumerable<string> Filterable => ["Name", "Status", "OwnerId"];
+protected override IEnumerable<string> Sortable   => ["Name", "CreatedAt"];
+```
+
+Both are empty by default, so a new listing exposes no query surface until it says so — adding a
+column to an entity never silently adds a filter to its API. A field outside the allowlist throws
+`InvalidOperationException`, which the middleware maps to 400.
+
+Sorting is always a **total order**: your sorters, then `CreatedAt` descending if you supplied none,
+then `Id`. That last clause is not decoration — without it two rows with equal sort keys can swap
+between requests, and the client sees one row twice while never seeing another.
+
+For anything the descriptors cannot express — a join, a computed predicate, tenant scoping —
+override `ApplyCustomFilters`. It composes with the descriptors rather than replacing them:
+
+```csharp
+protected override IQueryable<Customer> ApplyCustomFilters(IQueryable<Customer> source, CustomerQuery request) =>
+    request.MineOnly == true ? source.Where(c => c.OwnerId == currentUser.Id) : source;
+```
+
+`Contains` and `StartsWith` lower both sides, so matching is case-insensitive — which also means a
+plain B-tree index will not serve them. A hot search column wants a functional index on
+`lower(column)`, or a `EF.Functions.ILike` clause written in `ApplyCustomFilters`.
+
+Note `Query` is `AsNoTracking` — reads never need the change tracker. `RequireAsync` deliberately
+re-fetches **tracked** through `Db.Set<TEntity>()` so `SaveChangesAsync` sees the modification.
 
 ## Rules
 
 - Every service has an **interface**; controllers depend on the interface, never the class
-- CRUD services derive from `CrudService<TEntity>` and expose feature-typed methods over it
-- Build filters as composable `IQueryable` clauses guarded by `if` — never build SQL strings
+- CRUD services derive from `CrudService<...>`, declare their query allowlists, and add the
+  details read — the four CRUD methods come from the base
+- Extra filters go in `ApplyCustomFilters` as composable `IQueryable` clauses — never SQL strings
 - Every method takes a `CancellationToken` and passes it down
 - Return DTOs, never entities, from read methods
 
@@ -121,46 +175,33 @@ Note `Query` is `AsNoTracking` — reads never need the change tracker. Writes d
 // src/ReactShadcn.Api/Features/EntityNames/EntityNameService.cs
 public interface IEntityNameService
 {
-    Task<PagedResult<EntityNameListItem>> ListAsync(EntityNameQuery query, CancellationToken ct = default);
+    Task<PagedResult<EntityNameListItem>> GetListingAsync(EntityNameQuery request, CancellationToken ct = default);
     Task<EntityNameDetails> GetAsync(Guid id, CancellationToken ct = default);
-    Task<EntityName> CreateAsync(CreateEntityNameRequest input, CancellationToken ct = default);
-    Task<EntityName> UpdateAsync(Guid id, UpdateEntityNameRequest input, CancellationToken ct = default);
-    Task RemoveAsync(Guid id, CancellationToken ct = default);
+    Task<Guid> CreateAsync(CreateEntityNameRequest input, CancellationToken ct = default);
+    Task<Guid> UpdateAsync(UpdateEntityNameRequest input, CancellationToken ct = default);
+    Task DeleteAsync(Guid id, CancellationToken ct = default);
 }
 
 public class EntityNameService(AppDbContext db, IMapper mapper)
-    : CrudService<EntityName>(db, mapper), IEntityNameService
+    : CrudService<EntityName, Guid, CreateEntityNameRequest, UpdateEntityNameRequest, EntityNameQuery, EntityNameListItem>(db, mapper),
+      IEntityNameService
 {
-    public Task<PagedResult<EntityNameListItem>> ListAsync(EntityNameQuery query, CancellationToken ct = default)
-    {
-        var filtered = Query;
+    // The listing's entire query surface. Nothing outside these is filterable or
+    // sortable, however tempting the column.
+    protected override IEnumerable<string> Filterable => ["Name", "RelatedEntityId", "CreatedAt"];
+    protected override IEnumerable<string> Sortable => ["Name", "CreatedAt"];
 
-        if (!string.IsNullOrWhiteSpace(query.Name))
-        {
-            filtered = filtered.Where(e => EF.Functions.ILike(e.Name, $"%{query.Name}%"));
-        }
-
-        if (query.RelatedEntityId is { } relatedId)
-        {
-            filtered = filtered.Where(e => e.RelatedEntityId == relatedId);
-        }
-
-        return ListAsync<EntityNameListItem>(query, filtered, ct);
-    }
-
-    public Task<EntityNameDetails> GetAsync(Guid id, CancellationToken ct = default) =>
-        GetAsync<EntityNameDetails>(id, ct);
-
-    public Task<EntityName> CreateAsync(CreateEntityNameRequest input, CancellationToken ct = default) =>
-        CreateAsync<CreateEntityNameRequest>(input, ct);
-
-    public Task<EntityName> UpdateAsync(Guid id, UpdateEntityNameRequest input, CancellationToken ct = default) =>
-        UpdateAsync<UpdateEntityNameRequest>(id, input, ct);
+    public async Task<EntityNameDetails> GetAsync(Guid id, CancellationToken ct = default) =>
+        await QueryById(id).ProjectTo<EntityNameDetails>(Mapper.ConfigurationProvider).FirstOrDefaultAsync(ct)
+        ?? throw new KeyNotFoundException($"Not found: {id}");
 }
 ```
 
-That example is pure passthrough because the feature has no rules yet. Most features do.
-The sections below are what to do when they arrive.
+`GetListingAsync`, `CreateAsync`, `UpdateAsync` and `DeleteAsync` are inherited — the interface
+re-declares them so callers can depend on it, but there is nothing to write. That leaves the
+allowlists and the details read, which is the part that is genuinely per-feature.
+
+The example has no business rules yet. Most features grow them; the sections below are where they go.
 
 ## Where business rules go
 
@@ -206,23 +247,23 @@ public async Task ArchiveWithChildrenAsync(Guid id, CancellationToken ct = defau
 ```
 
 Note this reads through `Db` directly, not `Query` — `Query` is `AsNoTracking`, so entities
-it returns are not tracked and mutating them saves nothing. **Read through `Db.Set<T>()` when
-you intend to write, and `Query` when you only intend to read.** Silently saving nothing is
-the most common bug in this layer.
+it returns are not tracked and mutating them saves nothing. **Read through `Db.Set<T>()` (or the
+base's `RequireAsync`) when you intend to write, and `Query`/`QueryById` when you only intend to
+read.** Silently saving nothing is the most common bug in this layer.
 
 An explicit transaction is only needed when one unit of work spans several
 `SaveChangesAsync` calls — typically because you call another service that saves internally:
 
 ```csharp
-public async Task<EntityName> CreateWithAuditAsync(CreateEntityNameRequest input, CancellationToken ct = default)
+public async Task<Guid> CreateWithAuditAsync(CreateEntityNameRequest input, CancellationToken ct = default)
 {
     await using var tx = await Db.Database.BeginTransactionAsync(ct);
 
-    var created = await CreateAsync(input, ct);          // saves
-    await auditService.RecordAsync(created.Id, ct);      // saves again
+    var id = await CreateAsync(input, ct);       // saves
+    await auditService.RecordAsync(id, ct);      // saves again
 
     await tx.CommitAsync(ct);
-    return created;
+    return id;
 }
 ```
 
@@ -269,9 +310,10 @@ singleton captures a disposed context and fails at the second request.
 ## Checklist
 - [ ] Service has an interface, and callers depend on the interface
 - [ ] Registered `AddScoped<IFoo, Foo>()` in `Program.cs`
+- [ ] `Filterable` and `Sortable` are overridden — and list only what the API should expose
 - [ ] Every async method takes and forwards a `CancellationToken`
-- [ ] Reads use `Query` (`AsNoTracking`); writes read through `Db.Set<T>()`
+- [ ] Reads use `Query`/`QueryById` (`AsNoTracking`); writes go through `RequireAsync`
 - [ ] One `SaveChangesAsync` per unit of work — explicit transaction only across several
-- [ ] Reads return DTOs projected with `ProjectTo`, never raw entities
-- [ ] Deletes are soft (`RemoveAsync` sets `IsDeleted`), never `Remove(entity)`
+- [ ] Reads return DTOs projected in the database, never raw entities
+- [ ] Deletes are soft (`DeleteAsync` sets `IsDeleted`), never `Remove(entity)`
 - [ ] Failures throw the exception the middleware maps, with the offending value in the message

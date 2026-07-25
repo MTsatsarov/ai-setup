@@ -1,0 +1,28 @@
+Would scaffold into /tmp/kit-golden
+
+Commands (10) — run in order, stopping at the first failure:
+   1. dotnet new sln --name MapsterShop
+   2. dotnet new webapi --use-controllers --name MapsterShop.Api --output src/MapsterShop.Api
+   3. dotnet sln add src/MapsterShop.Api/MapsterShop.Api.csproj
+   4. dotnet add src/MapsterShop.Api package Swashbuckle.AspNetCore
+   5. rm -f src/MapsterShop.Api/WeatherForecast.cs src/MapsterShop.Api/Controllers/WeatherForecastController.cs
+      note: the template's sample endpoint is replaced by the first real feature
+   6. dotnet add src/MapsterShop.Api package Microsoft.EntityFrameworkCore
+   7. dotnet add src/MapsterShop.Api package Microsoft.EntityFrameworkCore.Design
+   8. dotnet add src/MapsterShop.Api package Npgsql.EntityFrameworkCore.PostgreSQL
+   9. dotnet tool install --global dotnet-ef
+      note: skip if already installed; `dotnet tool update --global dotnet-ef` to refresh
+  10. dotnet add src/MapsterShop.Api package Mapster
+
+Convention files (6) — rendered from the library, then written:
+  src/MapsterShop.Api/Common/Entities/AuditedEntity.cs
+  src/MapsterShop.Api/Common/Models/Pagination.cs
+  src/MapsterShop.Api/Common/Models/QueryableFilterExtensions.cs
+  src/MapsterShop.Api/Properties/launchSettings.json
+  src/MapsterShop.Api/Common/Data/AppDbContext.cs
+  src/MapsterShop.Api/Common/Services/CrudService.cs
+
+Environment (.env.example, 1 key(s)):
+  ConnectionStrings__Default
+
+Nothing was written — this was --dry-run.

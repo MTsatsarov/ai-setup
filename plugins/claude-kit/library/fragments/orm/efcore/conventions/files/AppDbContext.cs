@@ -10,16 +10,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
         // Global soft-delete filter — every query excludes deleted rows unless
-        // it explicitly calls IgnoreQueryFilters().
+        // it explicitly calls IgnoreQueryFilters(). Keyed on the ISoftDelete
+        // interface rather than AuditedEntity: IsAssignableFrom cannot test an
+        // open generic, and AuditedEntity<TId> is one.
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
-            if (!typeof(AuditedEntity).IsAssignableFrom(entityType.ClrType))
+            if (!typeof(ISoftDelete).IsAssignableFrom(entityType.ClrType))
             {
                 continue;
             }
 
             var parameter = System.Linq.Expressions.Expression.Parameter(entityType.ClrType, "e");
-            var property = System.Linq.Expressions.Expression.Property(parameter, nameof(AuditedEntity.IsDeleted));
+            var property = System.Linq.Expressions.Expression.Property(parameter, nameof(ISoftDelete.IsDeleted));
             var filter = System.Linq.Expressions.Expression.Lambda(
                 System.Linq.Expressions.Expression.Equal(property, System.Linq.Expressions.Expression.Constant(false)),
                 parameter);
@@ -30,7 +32,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        foreach (var entry in ChangeTracker.Entries<AuditedEntity>())
+        foreach (var entry in ChangeTracker.Entries<IAudited>())
         {
             if (entry.State == EntityState.Modified)
             {

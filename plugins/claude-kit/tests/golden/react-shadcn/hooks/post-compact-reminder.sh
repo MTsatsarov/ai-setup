@@ -9,7 +9,9 @@ Reminder — React Shadcn key rules:
 - Backend and frontend are **separate concerns** — never mix them in a single agent
 - No business logic in controllers — controllers delegate to a scoped service
 - Request models are validated before the service is reached; services assume valid input
+- A listing endpoint's query surface is exactly what the service's `Filterable`/`Sortable` allowlists declare — never widen one without meaning to
 - Soft delete is enforced by a global query filter on the DbContext — never call `Remove(entity)`, set `IsDeleted` instead
+- CRUD lives in `CrudService<TEntity, TId, TCreate, TUpdate, TListRequest, TListItem>` — derive from it rather than re-writing paging, filtering or sorting per feature
 - Never hand-edit files under `Data/Migrations/` — change the entity and run `dotnet ef migrations add`
 - Endpoints are authenticated by JWT bearer token; the fallback policy denies anonymous access unless an endpoint opts out with `[AllowAnonymous]`
 - Authorization is role-based and deny-by-default — a new endpoint is closed unless it explicitly opts out

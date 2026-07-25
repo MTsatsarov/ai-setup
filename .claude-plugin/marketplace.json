@@ -8,10 +8,21 @@
   "plugins": [
     {
       "name": "claude-kit",
-      "description": "Scaffold a new project from official stack CLIs, layer house conventions, and generate a complete .claude/ setup (CLAUDE.md, agents, skills, hooks, settings.json).",
+      "description": "Scaffold a new project from official stack CLIs, layer house conventions — including a generic CRUD service with paging, filtering and sorting — and generate a complete .claude/ setup (CLAUDE.md, agents, skills, hooks, settings.json).",
       "source": "./plugins/claude-kit",
       "category": "workflow",
-      "tags": ["scaffolding", "skills", "agents", "nestjs", "abp", "drizzle", "efcore"]
+      "tags": [
+        "scaffolding",
+        "skills",
+        "agents",
+        "nestjs",
+        "aspnet-core",
+        "drizzle",
+        "efcore",
+        "nextjs",
+        "react",
+        "angular"
+      ]
     }
   ]
 }

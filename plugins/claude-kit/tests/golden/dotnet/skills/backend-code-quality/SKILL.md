@@ -17,9 +17,10 @@ description: Use as a checklist after implementing backend code. Covers SOLID, a
 - [ ] Services are registered `AddScoped` — never singleton, they hold a `DbContext`
 - [ ] Request models carry DataAnnotations; `[ApiController]` handles the 400 automatically
 - [ ] Every async method takes a `CancellationToken` and forwards it to EF Core
-- [ ] Reads go through `Query` (AsNoTracking) and rely on the global soft-delete filter — `IgnoreQueryFilters()` is never used without a written reason
-- [ ] Reads use `ProjectTo<TDto>` so only the DTO's columns leave the database — never `ToListAsync()` on the entity followed by in-memory mapping
-- [ ] Filters are composed as `IQueryable` clauses guarded by `if`, never interpolated SQL
+- [ ] Reads go through `Query`/`QueryById` (AsNoTracking) and rely on the global soft-delete filter — `IgnoreQueryFilters()` is never used without a written reason
+- [ ] Collection reads project to the DTO in the database so only its columns leave — never `ToListAsync()` on entities followed by in-memory mapping
+- [ ] Listing services override `Filterable`/`Sortable` and list only fields the API should expose
+- [ ] Extra filters are composed as `IQueryable` clauses in `ApplyCustomFilters`, never interpolated SQL
 - [ ] Always use curly braces `{ }` for all control blocks (`if`, `else`, `for`, `while`), even for single statements
 - [ ] Before changing a shared signature (entity property, DTO, service method), run LSP `findReferences` and confirm every call site is updated
 

@@ -1,0 +1,9 @@
+{
+  "$comment": "ASP.NET Core + EF Core with Mapster instead of AutoMapper. Pins the mapping axis's crud_* vars, which template CrudService.cs: before they existed the base hardcoded AutoMapper and this combination shipped a project that would not compile. Also the only fixture with authz=none on a .NET stack.",
+  "project": { "name": "Mapster Shop", "notification_title": "mapster-shop" },
+  "answers": {
+    "backend-framework": "aspnet-core", "orm": "efcore",
+    "auth": "jwt", "authz": "none", "mapping": "mapster",
+    "frontend-framework": "none", "ui-kit": "none", "tracker": "none"
+  }
+}

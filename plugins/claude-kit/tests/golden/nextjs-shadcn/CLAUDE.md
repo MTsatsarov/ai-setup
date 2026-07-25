@@ -13,6 +13,7 @@
 - No business logic in controllers — controllers delegate to injectable services
 - Request DTOs carry class-validator decorators and pass through the global `ValidationPipe`
 - Every read excludes soft-deleted rows — compose `eq(table.isDeleted, false)` into the `where`
+- CRUD lives in `CrudService<TTable, TId, TCreate, TUpdate, TListRequest, TListItem>` — extend it rather than re-writing paging, filtering or sorting per feature
 - Never hand-edit files under `apps/api/drizzle/` — change the schema and run `npx drizzle-kit generate`
 - Endpoints are authenticated by JWT bearer token; the fallback policy denies anonymous access unless an endpoint opts out with `[AllowAnonymous]`
 - Authorization is role-based and deny-by-default — a new endpoint is closed unless it explicitly opts out

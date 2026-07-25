@@ -41,7 +41,7 @@ answers.json ──► resolve.mjs ──► plan.json ──► render.mjs ─�
 
 `backend-entities` is owned by the `orm` axis. Pick `drizzle` and its body is the
 pgTable/`auditColumns`/`relations()` version; pick `efcore` and it is the
-`FullAuditedEntity`/`IEntityTypeConfiguration` version. Same filename in the target repo,
+`AuditedEntity`/`IEntityTypeConfiguration` version. Same filename in the target repo,
 same agent frontmatter entry, different content — and nothing downstream knows which.
 
 A slot can also be **composed**: NestJS owns the `backend-service` body (module /
@@ -66,6 +66,22 @@ in without forking the NestJS body.
 `nest new`, `dotnet new`, `create-next-app`, `create vite`, `ng new`) **and** generates the
 matching `.claude/` payload. `tests/run.sh` resolves + renders every one of the **648** legal
 axis combinations.
+
+Beyond the CLI output, the scaffold lays down the house conventions as **real source files** —
+soft-delete-aware entities, the DbContext/Drizzle wiring, and a generic CRUD base:
+
+```
+CrudService<TEntity, TId, TCreateRequest, TUpdateRequest, TListRequest, TListItem>
+  GetListing(TListRequest) -> PagedResult<TListItem>   // page, filter, sort
+  Create(TCreateRequest)   -> TId
+  Update(TUpdateRequest)   -> TId                      // id travels on the model
+  Delete(TId)                                          // soft delete
+```
+
+Listing requests extend a shared base carrying `Page`, `PageSize`, `Filters` and `Sorters`;
+the base applies all three, but only over the fields a service allowlists, so adding a column
+never silently widens its API. Both backends get the same contract — EF Core via expression
+trees, Drizzle via typed column maps.
 
 ### Skills each answer generates
 

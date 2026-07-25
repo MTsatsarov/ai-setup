@@ -18,7 +18,8 @@ description: Use as a checklist after implementing backend code. Covers SOLID/as
 - [ ] Duplicated logic is extracted into methods or shared providers
 - [ ] Request DTOs carry class-validator decorators and pass through the global `ValidationPipe`
 - [ ] Reads always exclude soft-deleted rows with `eq(table.isDeleted, false)`
-- [ ] Composable `SQL` condition-builders (query objects) are used for complex filtering
+- [ ] Listing services declare `filterable`/`sortable` maps holding only columns the API should expose
+- [ ] Composable `SQL` condition-builders (query objects) are used for complex filtering, in `applyCustomFilters`
 - [ ] Drizzle `select`/relational `with` fetch only needed columns — no N+1 (batch/relation-load instead of per-row queries)
 - [ ] Always use curly braces `{ }` for all control blocks (`if`, `else`, `for`, `while`, etc.), even for single statements
 - [ ] Before changing a shared signature (table column, DTO, service/interface method), run LSP `findReferences` on it and confirm all call sites are updated

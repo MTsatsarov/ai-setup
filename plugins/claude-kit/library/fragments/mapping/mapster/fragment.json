@@ -5,9 +5,21 @@
   "label": "Mapster",
   "description": "Faster, lighter alternative to AutoMapper with compile-time code generation available. Config lives in IRegister classes.",
   "requires": { "backend-framework": ["aspnet-core"] },
+  "$comment": "The crud_* vars are consumed by orm/efcore's CrudService.cs template. All three mapping fragments must define the SAME keys — erb throws on a missing path, and \"\" is falsy, which is how the template skips a block.",
+
   "vars": {
     "name": "Mapster",
-    "quality_checks": ["Reads use `ProjectToType<TDto>()` rather than loading entities and mapping in memory"]
+    "quality_checks": ["Reads use `ProjectToType<TDto>()` rather than loading a collection of entities and mapping it in memory"],
+    "crud_usings": "using Mapster;",
+    "crud_ctor_params": "AppDbContext db",
+    "crud_ctor_args": "db",
+    "crud_mapper_member": "",
+    "crud_listing_projection": ".ProjectToType<TListItem>()",
+    "crud_map_create": "input.Adapt<TEntity>()!",
+    "crud_map_update": "input.Adapt(entity)",
+    "crud_abstract_hooks": "",
+    "crud_derived_hooks": "",
+    "crud_details_read": "QueryById(id).ProjectToType<EntityNameDetails>().FirstOrDefaultAsync(ct)"
   },
   "contributes": {
     "backend-models#mapping": "sections/models-mapping.md",

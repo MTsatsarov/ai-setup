@@ -21,7 +21,7 @@ Commands (10) — run in order, stopping at the first failure:
 Convention files (10) — rendered from the library, then written:
   apps/api/src/main.ts
   apps/api/src/app.module.ts
-  apps/api/src/common/dto/pagination-query.dto.ts
+  apps/api/src/common/dto/base-paginated-request.dto.ts
   apps/api/drizzle.config.ts
   apps/api/tsconfig.build.json
   apps/api/src/db/schema/_shared.ts

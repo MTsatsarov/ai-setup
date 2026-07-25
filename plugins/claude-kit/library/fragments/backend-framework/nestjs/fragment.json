@@ -82,8 +82,8 @@
         "to": "apps/api/src/app.module.ts"
       },
       {
-        "from": "conventions/files/dto/pagination-query.dto.ts",
-        "to": "apps/api/src/common/dto/pagination-query.dto.ts"
+        "from": "conventions/files/dto/base-paginated-request.dto.ts",
+        "to": "apps/api/src/common/dto/base-paginated-request.dto.ts"
       }
     ]
   },
