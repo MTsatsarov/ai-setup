@@ -5,12 +5,12 @@ scaffolds a new project's running application *and* its matching per-project `.c
 
 ## Why
 
-Setting up a new project used to mean `cp -r nextjs-shadcn/ <repo>/.claude/` and then editing
-by hand. Two such payloads exist ([`nextjs-shadcn`](a hand-copied payload repo)
-for NestJS+Drizzle, `the ABP payload` for ABP+EF Core) and they are the *same setup instantiated
-twice* — identical skill slot names, identical agent skeleton, identical hooks modulo
-string constants. Both have already drifted: their `CLAUDE.md` skill lists disagree with
-their own agent frontmatter, because those lists are maintained in two places.
+Setting up a new project used to mean `cp -r <some-other-repo>/.claude/ .` and then
+editing by hand. Keep two such payloads — say one for NestJS+Drizzle and one for
+ABP+EF Core — and you have the *same setup instantiated twice*: identical skill slot
+names, identical agent skeleton, identical hooks modulo string constants. Both drift.
+Their `CLAUDE.md` skill lists end up disagreeing with their own agent frontmatter,
+because those lists are maintained in two places.
 
 claude-kit makes the payload **generated**, from composable per-axis fragments. The
 skill list appears in exactly one place — the resolved plan — so it cannot drift.

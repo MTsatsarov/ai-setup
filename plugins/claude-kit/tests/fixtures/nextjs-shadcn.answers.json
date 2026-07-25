@@ -1,10 +1,8 @@
 {
-  "$comment": "Reproduces the backend half of a hand-copied payload repo. The golden render for this fixture is the M1 acceptance test.",
+  "$comment": "Full-stack reference render: NestJS + Drizzle behind Next.js App Router with shadcn. Exercises every axis at once (jwt, rbac, clickup, manual mapping), so it is the broadest acceptance test in the suite.",
   "project": {
-    "name": "nextjs-shadcn",
-    "notification_title": "nextjs-shadcn",
-    "repo": "example/nextjs-shadcn",
-    "github_user": "MTsatsarov"
+    "name": "Nextjs shadcn",
+    "notification_title": "nextjs-shadcn"
   },
   "answers": {
     "backend-framework": "nestjs",

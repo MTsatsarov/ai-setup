@@ -1,4 +1,4 @@
-## Project: nextjs-shadcn
+## Project: Nextjs shadcn
 
 ### Tech Stack
 - **Backend:** NestJS (TypeScript) — source at `apps/api/src`, one folder per feature

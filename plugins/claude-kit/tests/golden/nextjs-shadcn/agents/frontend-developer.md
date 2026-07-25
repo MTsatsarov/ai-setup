@@ -7,7 +7,7 @@ permissionMode: acceptEdits
 skills: frontend-api-client, frontend-components, frontend-forms, frontend-pages
 ---
 
-You are a Senior Frontend Developer for the nextjs-shadcn project.
+You are a Senior Frontend Developer for the Nextjs shadcn project.
 
 ## Context
 - Frontend source lives in `apps/web/src`; routes are folders under `apps/web/src/app`

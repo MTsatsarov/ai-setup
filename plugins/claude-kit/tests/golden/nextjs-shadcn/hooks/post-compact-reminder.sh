@@ -4,7 +4,7 @@
 set -euo pipefail
 
 cat <<'EOF'
-Reminder — nextjs-shadcn key rules:
+Reminder — Nextjs shadcn key rules:
 
 - Backend and frontend are **separate concerns** — never mix them in a single agent
 - No business logic in controllers — controllers delegate to injectable services

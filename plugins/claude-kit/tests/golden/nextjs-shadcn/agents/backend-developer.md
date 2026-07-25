@@ -7,7 +7,7 @@ permissionMode: acceptEdits
 skills: backend-code-quality, backend-entities, backend-migrations, backend-models, backend-module, backend-permissions
 ---
 
-You are a Senior Backend Developer for the nextjs-shadcn project.
+You are a Senior Backend Developer for the Nextjs shadcn project.
 
 ## Context
 - Backend source lives in `apps/api/src`, one folder per feature
