@@ -6,6 +6,16 @@
   "description": "Issue keys look like PROJ-123.",
   "vars": {
     "name": "Jira",
-    "id_example": "PROJ-123"
+    "id_example": "PROJ-123",
+    "id_pattern": "^[A-Z][A-Z0-9]+-[0-9]+$",
+    "id_description": "a Jira issue key (e.g. PROJ-123)",
+    "branch_segments": "3",
+    "has_tracker": "yes",
+    "state_fields": "jira",
+    "mcp_get": "mcp__jira__jira_get",
+    "title_prefix": "[<KEY>] "
+  },
+  "provides": {
+    "create-task": "slots/create-task.md"
   }
 }

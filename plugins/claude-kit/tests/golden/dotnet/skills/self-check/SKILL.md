@@ -1,0 +1,129 @@
+---
+name: self-check
+description: Review your own uncommitted change against the project's conventions and fix what it finds — the judgement layer on top of the gate. Runs the shared review pipeline over the working-tree diff, turns findings into a fix plan, delegates fixes to the owning agents, re-verifies, and re-reviews once. Never commits.
+argument-hint: "[<task id>] — optional; used to name the fix plan and persist the round counter"
+---
+
+# /self-check — Is It Right?
+
+`.claude/scripts/verify.sh` proves the code builds and its tests pass. This
+skill asks the question the gate cannot: **is it right?**
+
+Hold `.claude/skills/shared/safety-invariants.md` throughout — invariant 8 in
+particular.
+
+## Step 1 — Run the review pipeline
+
+Read `.claude/skills/shared/review-pipeline.md` in full and execute it over the
+working-tree change set.
+
+Reviewing your own work is not a reason for leniency. The pipeline's
+completeness contract is explicit that the finding set does not depend on who
+wrote the code.
+
+## Step 2 — Convert findings into fixes
+
+Two passes, and **finish the first completely before starting the second**, so
+that the work of writing fix instructions never shrinks the finding set.
+
+1. Enumerate every finding.
+2. Give each one a concrete fix instruction, an **Area**
+   (`Backend`, `Tests`, `Frontend` — most
+   specific wins) and a **Fixability**:
+   - **auto-fixable** — a mechanical change against a named rule
+   - **needs author decision** — a judgement call about what the product should
+     do. Never auto-applied (invariant 8).
+
+## Step 3 — Write the fix plan
+
+Write `docs/plans/<ID>-fixes.md` (or
+`docs/plans/self-check-fixes.md` with no id):
+
+```markdown
+# Self-check: <ID>
+
+**Round:** 1
+
+## Findings
+<numbered; each with path:line, the quoted code, and the rule it violates>
+
+## Backend Tasks
+1. [ ] ...
+
+## Tests Tasks
+1. [ ] ...
+
+## Frontend Tasks
+1. [ ] ...
+
+## Needs Author Decision (not auto-fixed)
+```
+
+Zero findings: print `No issues found.` and stop — no fix plan file.
+
+Every finding needing a decision: list them and stop. If a loop is driving,
+write a `needs-decision` stop record first.
+
+## Step 4 — The approval gate
+
+Print the findings and end the turn with exactly:
+
+```
+Reply: **all** · finding numbers (e.g. **1,3**) · **skip**
+```
+
+**The report must be the final message of the turn.** Do not call
+`AskUserQuestion` in the same turn — the question UI replaces the report on
+screen, and the user approves a list they never saw.
+
+**When `/ship` is driving, this stage does not ask.** Auto-approve every
+auto-fixable finding, as if the user replied `all`. What makes that safe is not
+a confirmation: the findings cite named rules from the project's own skill files,
+the fixes are re-verified before the stage ends, and nothing is committed. A
+question here would strand a finished run with nobody reading the terminal.
+
+## Step 5 — Delegate the fixes
+
+Route by area, to the agent that owns it. Give each agent this constraint
+verbatim:
+
+> Apply only these fixes — minimal, targeted changes. Do not refactor beyond the
+> listed findings, and do not fix anything not listed here.
+
+## Step 6 — Re-verify
+
+```bash
+.claude/scripts/verify.sh full
+```
+
+## Step 7 — Re-review, the exit condition
+
+Re-run the pipeline over the **fixed** code. This is what makes this a loop
+rather than a single pass: fixes introduce their own findings, and one pass never
+sees them.
+
+**Read the round number from the state file, and write it before the round
+runs:**
+
+```bash
+.claude/scripts/plan-state.sh <ID> get selfCheck.round
+.claude/scripts/plan-state.sh <ID> set selfCheck.round=<r>
+```
+
+Holding it in your head works right up until a compact lands mid-round, at which
+point the cap resets and the loop can run indefinitely.
+
+- zero auto-fixable findings → done
+- new findings and round < 2 → append under `## Round <r+1> Findings`, go to
+  step 5. **No fresh approval** — round 2 fixes problems introduced by fixes the
+  user already approved
+- round == 2 → stop, and carry whatever is still open into the report
+
+## Step 8 — Report
+
+Fixes applied, rounds run, `git diff --stat`, the verdict block, and **Needs
+Author Decision items still open — always shown, even when empty (`none`)**. An
+absent section reads as "not checked"; an explicit `none` reads as "checked,
+nothing for you".
+
+Nothing was committed. Say so.

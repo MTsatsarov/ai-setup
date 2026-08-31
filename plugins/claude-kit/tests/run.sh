@@ -77,6 +77,11 @@ done
 # --- 4. the drift check that motivated the whole generator --------------------
 # CLAUDE.md's skill list, the agent's `skills:` frontmatter, and the actual
 # skills/ directory must agree. Both source repos had these three disagree.
+#
+# Workflow skills are the one deliberate exception: they are base-owned and
+# driven by a human or by /loop, so they appear on disk and in CLAUDE.md but in
+# no agent's `skills:` list. The check compares the agent list against the
+# STACK skills only, and CLAUDE.md against everything.
 step "no drift"
 for golden in tests/golden/*/; do
   name=$(basename "$golden")
@@ -85,14 +90,47 @@ for golden in tests/golden/*/; do
   # Only the Skills section — the Agents section above it also uses `backticks`.
   in_claude=$(sed -n '/^### Skills/,/^<!--/p' "$golden/CLAUDE.md" \
     | sed -n 's/^- `\(.*\)`$/\1/p' | sort -u | tr '\n' ' ')
+  # The Workflow group, verbatim from the same generated list.
+  workflow=$(sed -n '/^\*\*Workflow\*\*/,/^$/p' "$golden/CLAUDE.md" \
+    | sed -n 's/^- `\(.*\)`$/\1/p' | sort -u | tr '\n' ' ')
+  stack=$(printf '%s\n' $on_disk | grep -vxF -f <(printf '%s\n' $workflow) 2>/dev/null | sort -u | tr '\n' ' ')
+  [ -z "$workflow" ] && stack="$on_disk"
 
-  if [ "$on_disk" = "$in_agent" ] && [ "$on_disk" = "$in_claude" ]; then
-    pass "$name — skills/ == agent frontmatter == CLAUDE.md"
+  if [ "$stack" = "$in_agent" ] && [ "$on_disk" = "$in_claude" ]; then
+    pass "$name — skills/ == agent frontmatter + workflow == CLAUDE.md"
   else
-    fail "$name drift: dir[$on_disk] agent[$in_agent] claude[$in_claude]"
+    fail "$name drift: dir[$on_disk] stack[$stack] agent[$in_agent] claude[$in_claude]"
   fi
 done
 
+
+# --- 4b. the generated guard hook must actually guard -------------------------
+# The hook ships with its own fixture because its failure mode is silent AND
+# inverted: a PreToolUse hook that errors exits 2, which the harness reads as
+# "blocked". A guard broken by an unquoted `|` inside `[[ =~ ]]` looks identical
+# to a working one right up until it blocks something you needed.
+step "generated hooks"
+HOOKSB=$(mktemp -d)
+if node scripts/resolve.mjs --answers tests/fixtures/nextjs-shadcn.answers.json --out "$HOOKSB/plan.json" --quiet \
+   && node scripts/render.mjs --plan "$HOOKSB/plan.json" --out "$HOOKSB/.claude" >/dev/null; then
+  ( cd "$HOOKSB" && git init -q . && git commit -q --allow-empty -m init ) >/dev/null 2>&1
+  OUT_HOOK=$( cd "$HOOKSB" && ./.claude/hooks/test-protect-plan-artifacts.sh 2>&1 )
+  if [ $? -eq 0 ]; then
+    pass "protect-plan-artifacts — $(printf '%s' "$OUT_HOOK" | tail -1)"
+  else
+    printf '%s\n' "$OUT_HOOK"
+    fail "protect-plan-artifacts fixture"
+  fi
+  # Every generated shell file must at least parse. A template that renders a
+  # syntax error still writes a file, and nothing else here would notice.
+  for f in "$HOOKSB"/.claude/hooks/*.sh "$HOOKSB"/.claude/scripts/*.sh; do
+    if ! bash -n "$f" 2>/dev/null; then fail "syntax error in $(basename "$f")"; fi
+  done
+  pass "generated shell parses"
+else
+  fail "generated hooks (render)"
+fi
+rm -rf "$HOOKSB"
 
 # --- 5. the scripts must work from a symlinked install path -------------------
 # import.meta.url resolves symlinks, process.argv[1] does not. A naive main-module

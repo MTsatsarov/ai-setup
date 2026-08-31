@@ -17,7 +17,8 @@
       "Frontend and backend are **separate concerns** — never mix them in a single agent",
       "Components are Server Components unless they need state, effects or browser APIs — add `\"use client\"` only then"
     ],
-    "plain_field": "        <div className=\"space-y-2\">\n          <label htmlFor=\"name\">Name</label>\n          <input id=\"name\" {...register('name')} aria-invalid={!!errors.name} />\n          {errors.name && <p className=\"text-sm text-red-600\">{errors.name.message}</p>}\n        </div>\n"
+    "plain_field": "        <div className=\"space-y-2\">\n          <label htmlFor=\"name\">Name</label>\n          <input id=\"name\" {...register('name')} aria-invalid={!!errors.name} />\n          {errors.name && <p className=\"text-sm text-red-600\">{errors.name.message}</p>}\n        </div>\n",
+    "dev_port": "3000"
   },
   "provides": {
     "frontend-api-client": "slots/frontend-api-client.md",
@@ -42,6 +43,9 @@
         "Never call the database or import backend code from a component — go through the API client",
         "Never touch backend code"
       ]
+    },
+    "qa-web": {
+      "description": "Drives the running app in a real browser to execute a QA test plan. Reports findings with evidence; never edits code."
     }
   },
   "scaffold": {
@@ -67,7 +71,36 @@
     }
   },
   "verify": {
-    "build": "npm --prefix apps/web run build"
+    "build": "npm --prefix apps/web run build",
+    "area": "frontend",
+    "steps": [
+      {
+        "order": 20,
+        "name": "frontend-lint",
+        "tiers": [
+          "quick",
+          "full",
+          "integration"
+        ],
+        "run": "npm --prefix apps/web run lint"
+      },
+      {
+        "order": 21,
+        "name": "frontend-build",
+        "tiers": [
+          "quick",
+          "full",
+          "integration"
+        ],
+        "run": "npm --prefix apps/web run build"
+      }
+    ],
+    "err_patterns": [
+      "error TS[0-9]+",
+      "✖",
+      "Failed to compile",
+      "npm ERR"
+    ]
   },
   "settings": {
     "enabledPlugins": [

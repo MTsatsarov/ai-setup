@@ -6,6 +6,16 @@
   "description": "Task ids look like 86abc12.",
   "vars": {
     "name": "ClickUp",
-    "id_example": "86abc12"
+    "id_example": "86abc12",
+    "id_pattern": "^[a-z0-9]{6,12}$",
+    "id_description": "a ClickUp task id (e.g. 86abc12) — 6-12 lowercase alphanumerics",
+    "branch_segments": "3",
+    "has_tracker": "yes",
+    "state_fields": "clickup",
+    "mcp_get": "mcp__clickup__clickup_get_task",
+    "title_prefix": "[<KEY>] "
+  },
+  "provides": {
+    "create-task": "slots/create-task.md"
   }
 }

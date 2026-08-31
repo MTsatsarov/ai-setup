@@ -18,19 +18,23 @@
       "Backend and frontend are **separate concerns** — never mix them in a single agent",
       "No business logic in controllers — controllers delegate to injectable services",
       "Request DTOs carry class-validator decorators and pass through the global `ValidationPipe`"
-    ]
+    ],
+    "test_dir": "apps/api/test",
+    "test_match": "(^apps/api/test/|\\.spec\\.ts$|\\.e2e-spec\\.ts$)"
   },
   "provides": {
     "backend-models": "slots/backend-models.md",
     "backend-service": "slots/backend-service.md",
-    "backend-code-quality": "slots/backend-code-quality.md"
+    "backend-code-quality": "slots/backend-code-quality.md",
+    "backend-tests": "slots/backend-tests.md"
   },
   "emit_as": {
     "backend-service": "backend-module"
   },
   "contributes": {
     "claude-md#stack": "sections/claude-stack.md",
-    "backend-permissions#enforcement": "sections/permissions-enforcement.md"
+    "backend-permissions#enforcement": "sections/permissions-enforcement.md",
+    "review-pipeline#known_noise": "sections/known-noise.md"
   },
   "agent": {
     "backend-developer": {
@@ -46,6 +50,19 @@
         "Never put business logic in a controller — delegate to an injectable service",
         "Inject providers by token via DI; never `new` a dependency inside a class",
         "Never touch frontend code"
+      ]
+    },
+    "backend-tester": {
+      "description": "TypeScript backend tests only — Jest specs for the API. Writes tests for code it did not write, and never edits production code to make one pass.",
+      "lsp_trace": "a service method to the behaviour its callers depend on",
+      "impl_order": "arrange (module fixture + fakes) → act (the service or controller under test) → assert (one behaviour per test)",
+      "context": [
+        "Unit specs sit next to the code as `*.spec.ts`; end-to-end specs live in `<% backend.test_dir %>`",
+        "Build the module under test with `Test.createTestingModule`, overriding only the providers the case needs"
+      ],
+      "rules": [
+        "Never use `.skip` or `xit` to get past a failure — a skipped test reports success forever",
+        "Never assert only that a mock was called; assert the value returned or the state persisted, unless the call itself is the behaviour"
       ]
     }
   },
@@ -88,7 +105,40 @@
     ]
   },
   "verify": {
-    "build": "npm --workspace apps/api run build"
+    "build": "npm --workspace apps/api run build",
+    "area": "backend",
+    "steps": [
+      {
+        "order": 10,
+        "name": "backend-build",
+        "tiers": [
+          "quick",
+          "tests",
+          "full",
+          "integration"
+        ],
+        "run": "npm --workspace apps/api run build"
+      },
+      {
+        "order": 40,
+        "name": "backend-test",
+        "area": "tests",
+        "tiers": [
+          "tests",
+          "full",
+          "integration"
+        ],
+        "run": "npm --workspace apps/api run test -- --passWithNoTests=false"
+      }
+    ],
+    "err_patterns": [
+      "error TS[0-9]+",
+      "✕",
+      "^FAIL ",
+      "Tests: .*failed",
+      "npm ERR",
+      "Cannot find module"
+    ]
   },
   "settings": {
     "enabledPlugins": [

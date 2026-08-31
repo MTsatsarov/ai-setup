@@ -62,7 +62,13 @@ Also collect, in one final `AskUserQuestion` or as plain follow-up questions:
 
 - **project name** (from `$ARGUMENTS` if given)
 - **notification title** — defaults to the project name
-- **repo slug** and **github user** — optional, blank is fine
+- **repo slug** and **github user** — the github user appears in the documented
+  branch convention `{github_user}/{task-id}/{slug}`; `pr.sh` itself reads the
+  real login from `gh api user` at runtime, so a blank one renders a visible
+  `<github-user>` placeholder rather than breaking anything. Offer
+  `gh api user --jq .login` as the default.
+- **base branch** — defaults to `main`. The generated `pr.sh` targets it, the
+  artifact hook refuses direct pushes to it, and `verify.sh` diffs against it
 
 ## Phase 2 — Write the answers
 
@@ -78,14 +84,17 @@ Write `.claude-kit/answers.json`:
     "name": "<name>",
     "notification_title": "<title>",
     "repo": "<owner/repo or empty>",
-    "github_user": "<user or empty>"
+    "github_user": "<user or empty>",
+    "base_branch": "<main, or the project's base branch>"
   },
   "answers": { "<axis-id>": "<option>", "...": "..." }
 }
 ```
 
 Include every axis you asked **and** every axis that was auto-selected.
-`slug` and `pascal` are derived automatically — do not set them.
+`slug` and `pascal` are derived automatically — do not set them. `plans_dir`
+and `qa_dir` default to `docs/plans` and `docs/qa`; set them only if the project
+already uses different paths.
 
 ## Phase 3 — Resolve
 

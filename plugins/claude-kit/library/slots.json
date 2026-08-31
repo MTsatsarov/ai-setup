@@ -1,6 +1,5 @@
 {
   "$comment": "Canonical skill slots. 'owner_axis' names the axis whose selected fragment supplies the body. 'composite' slots additionally take contributions from other axes — via '<slot>#<anchor>' (injected at <% sections.<anchor> %>) or a bare '<slot>' (appended). 'emit_as' is declared per-fragment.",
-
   "slots": {
     "backend-entities": {
       "owner_axis": "orm",
@@ -20,7 +19,9 @@
       "agent": "backend-developer",
       "composite": true,
       "$comment": "The framework owns DTO shape and validation; the mapping axis supplies the entity->DTO section at the #mapping anchor.",
-      "contributor_order": ["mapping"]
+      "contributor_order": [
+        "mapping"
+      ]
     },
     "backend-service": {
       "owner_axis": "backend-framework",
@@ -28,7 +29,9 @@
       "agent": "backend-developer",
       "composite": true,
       "$comment": "The framework owns the controller/service/module shape; the ORM supplies the data-access blocks via #provider and #crud_base. That split is what lets a new ORM drop in without forking the framework body.",
-      "contributor_order": ["orm"]
+      "contributor_order": [
+        "orm"
+      ]
     },
     "backend-controller": {
       "owner_axis": "backend-framework",
@@ -42,7 +45,10 @@
       "group": "Backend",
       "agent": "backend-developer",
       "composite": true,
-      "contributor_order": ["orm", "authz"]
+      "contributor_order": [
+        "orm",
+        "authz"
+      ]
     },
     "backend-permissions": {
       "owner_axis": "authz",
@@ -50,7 +56,9 @@
       "agent": "backend-developer",
       "composite": true,
       "$comment": "Owned by the authz axis; the backend framework supplies the framework-specific enforcement snippet at #enforcement.",
-      "contributor_order": ["backend-framework"]
+      "contributor_order": [
+        "backend-framework"
+      ]
     },
     "frontend-api-client": {
       "owner_axis": "frontend-framework",
@@ -70,7 +78,9 @@
       "agent": "frontend-developer",
       "composite": true,
       "$comment": "The framework owns form mechanics (react-hook-form vs reactive forms); the UI kit supplies the control markup at the #ui anchor. Every ui-kit option must contribute one, including 'none' — the anchor is not optional.",
-      "contributor_order": ["ui-kit"]
+      "contributor_order": [
+        "ui-kit"
+      ]
     },
     "frontend-components": {
       "owner_axis": "ui-kit",
@@ -78,19 +88,257 @@
       "agent": "frontend-developer",
       "composite": false,
       "$comment": "Owned by the UI kit rather than the framework: how you obtain a button is a property of shadcn or PrimeNG, not of Next.js or Angular. ui-kit/none provides nothing, so a project without a kit simply has no such skill."
+    },
+    "backend-tests": {
+      "owner_axis": "backend-framework",
+      "group": "Backend",
+      "agent": "backend-tester",
+      "composite": true,
+      "$comment": "Owned by the backend framework because the test runner, the file layout and the assertion style are all properties of the framework. The ORM contributes how to arrange data at the #fixtures anchor.",
+      "contributor_order": [
+        "orm"
+      ]
+    },
+    "plan-task": {
+      "owner": "base",
+      "body": "base/skills/plan-task/SKILL.md.tmpl",
+      "group": "Workflow",
+      "agent": null,
+      "composite": true,
+      "$comment": "Entry point. Owned by no axis because the shape of a plan is the same everywhere; the tracker supplies how the task is fetched, and the areas fan out the task headings.",
+      "contributor_order": [
+        "tracker",
+        "backend-framework",
+        "frontend-framework"
+      ]
+    },
+    "implement-plan": {
+      "owner": "base",
+      "body": "base/skills/implement-plan/SKILL.md.tmpl",
+      "group": "Workflow",
+      "agent": null,
+      "composite": true,
+      "contributor_order": [
+        "tracker",
+        "backend-framework",
+        "frontend-framework"
+      ]
+    },
+    "verify-change": {
+      "owner": "base",
+      "body": "base/skills/verify-change/SKILL.md.tmpl",
+      "group": "Workflow",
+      "agent": null,
+      "composite": true,
+      "$comment": "The definition of done. Every other workflow skill defers to it, which is why it is base-owned: two owners would mean two definitions.",
+      "contributor_order": [
+        "tracker",
+        "backend-framework",
+        "frontend-framework"
+      ]
+    },
+    "self-check": {
+      "owner": "base",
+      "body": "base/skills/self-check/SKILL.md.tmpl",
+      "group": "Workflow",
+      "agent": null,
+      "composite": true,
+      "contributor_order": [
+        "tracker",
+        "backend-framework",
+        "frontend-framework"
+      ]
+    },
+    "pr": {
+      "owner": "base",
+      "body": "base/skills/pr/SKILL.md.tmpl",
+      "group": "Workflow",
+      "agent": null,
+      "composite": true,
+      "contributor_order": [
+        "tracker",
+        "backend-framework",
+        "frontend-framework"
+      ]
+    },
+    "pr-self-check": {
+      "owner": "base",
+      "body": "base/skills/pr-self-check/SKILL.md.tmpl",
+      "group": "Workflow",
+      "agent": null,
+      "composite": true,
+      "contributor_order": [
+        "tracker",
+        "backend-framework",
+        "frontend-framework"
+      ]
+    },
+    "pr-watch": {
+      "owner": "base",
+      "body": "base/skills/pr-watch/SKILL.md.tmpl",
+      "group": "Workflow",
+      "agent": null,
+      "composite": true,
+      "contributor_order": [
+        "tracker",
+        "backend-framework",
+        "frontend-framework"
+      ]
+    },
+    "review-pr": {
+      "owner": "base",
+      "body": "base/skills/review-pr/SKILL.md.tmpl",
+      "group": "Workflow",
+      "agent": null,
+      "composite": true,
+      "contributor_order": [
+        "tracker",
+        "backend-framework",
+        "frontend-framework"
+      ]
+    },
+    "ship": {
+      "owner": "base",
+      "body": "base/skills/ship/SKILL.md.tmpl",
+      "group": "Workflow",
+      "agent": null,
+      "composite": true,
+      "$comment": "The stage machine that drives everything above. One stage per invocation, re-armed by ScheduleWakeup under /loop.",
+      "contributor_order": [
+        "tracker",
+        "backend-framework",
+        "frontend-framework"
+      ]
+    },
+    "create-task": {
+      "owner_axis": "tracker",
+      "group": "Workflow",
+      "agent": null,
+      "composite": false,
+      "$comment": "Owned by the tracker axis, so tracker/none simply provides no body and a project without a tracker has no such skill — the ui-kit/none precedent. With the task described on the command line there is nothing to create."
+    },
+    "manual-qa": {
+      "owner": "base",
+      "body": "base/skills/manual-qa/SKILL.md.tmpl",
+      "group": "Workflow",
+      "agent": null,
+      "composite": true,
+      "$comment": "Adjacent to the loop, never inside it: /ship prints it as a next command and stops. Gated on having a frontend, because there has to be something to click.",
+      "skip_when": {
+        "frontend-framework": [
+          "none"
+        ]
+      },
+      "contributor_order": [
+        "frontend-framework",
+        "tracker"
+      ]
     }
   },
-
+  "shared": {
+    "$comment": "Non-skill includes emitted to .claude/skills/shared/. They have no frontmatter and are never invoked; the skills that depend on them are told to read them by path. That indirection is the point — one canonical copy of each cross-cutting rule, so an edit cannot land in one of four copies.",
+    "safety-invariants": {
+      "body": "base/skills/shared/safety-invariants.md.tmpl"
+    },
+    "stop-record": {
+      "body": "base/skills/shared/stop-record.md.tmpl"
+    },
+    "run-report": {
+      "body": "base/skills/shared/run-report.md.tmpl"
+    },
+    "review-pipeline": {
+      "body": "base/skills/shared/review-pipeline.md.tmpl",
+      "$comment": "The #known_noise anchor is the shape every project grows 3-5 of and no two projects share: stale caches, editor-only diagnostics, a flaky reporter. Empty by default.",
+      "contributor_order": [
+        "backend-framework",
+        "orm",
+        "frontend-framework",
+        "ui-kit"
+      ]
+    },
+    "tracker-drift-check": {
+      "body": "base/skills/shared/tracker-drift-check.md.tmpl",
+      "$comment": "Not emitted without a tracker: with the task described inline on the command line there is no external input a human can change underneath the run, so there is nothing to drift from.",
+      "skip_when": {
+        "tracker": [
+          "none"
+        ]
+      }
+    },
+    "qa-test-plan": {
+      "body": "base/skills/shared/qa-test-plan.md.tmpl",
+      "$comment": "Stack-independent by design, so a future emulator/device QA agent reuses it unchanged.",
+      "skip_when": {
+        "frontend-framework": [
+          "none"
+        ]
+      }
+    }
+  },
+  "scripts": {
+    "$comment": "Executable files emitted to .claude/scripts/. Base-owned: no axis provides the body, axes only contribute at anchors. They are not skills — the skills invoke them by path, which is what makes 'verified' mean one thing chain-wide.",
+    "plan-state.sh": {
+      "body": "base/scripts/plan-state.sh.tmpl"
+    },
+    "verify.sh": {
+      "body": "base/scripts/verify.sh.tmpl"
+    },
+    "statusline.sh": {
+      "body": "base/scripts/statusline.sh.tmpl"
+    },
+    "pr.sh": {
+      "body": "base/scripts/pr.sh.tmpl",
+      "$comment": "The single choke point for creating a remote branch and a PR. Keeping it a script rather than skill prose is what lets the permission allowlist grant `pr.sh` without granting bare `git push` and `gh pr create`.",
+      "contributor_order": [
+        "tracker"
+      ]
+    },
+    "qa-env.sh": {
+      "body": "base/scripts/qa-env.sh.tmpl",
+      "skip_when": {
+        "frontend-framework": [
+          "none"
+        ]
+      }
+    }
+  },
   "agents": {
     "backend-developer": {
       "template": "base/agents/backend-developer.md.tmpl",
       "required_axis": "backend-framework",
-      "skip_when": { "backend-framework": ["none"] }
+      "skip_when": {
+        "backend-framework": [
+          "none"
+        ]
+      }
     },
     "frontend-developer": {
       "template": "base/agents/frontend-developer.md.tmpl",
       "required_axis": "frontend-framework",
-      "skip_when": { "frontend-framework": ["none"] }
+      "skip_when": {
+        "frontend-framework": [
+          "none"
+        ]
+      }
+    },
+    "backend-tester": {
+      "template": "base/agents/backend-tester.md.tmpl",
+      "required_axis": "backend-framework",
+      "$comment": "Never skipped: the backend framework axis has no 'none' option, and the whole point of the agent is that it is not the implementer."
+    },
+    "qa-web": {
+      "template": "base/agents/qa-web.md.tmpl",
+      "required_axis": "frontend-framework",
+      "skip_when": {
+        "frontend-framework": [
+          "none"
+        ]
+      },
+      "no_skills": true,
+      "requires_vars": [
+        "description"
+      ],
+      "$comment": "Owns no skill group: it follows shared/qa-test-plan.md, which is an include rather than a skill. bowly's qa agents pointed `skills:` at that file and it silently resolved to nothing — declaring the absence is the fix."
     }
   }
 }

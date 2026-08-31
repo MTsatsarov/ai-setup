@@ -60,6 +60,23 @@ Check detected values against what the library actually supports:
 cat "$KIT/library/axes.json"
 ```
 
+### Also detect, and confirm rather than ask cold
+
+| Field | Evidence |
+|---|---|
+| `github_user` | `gh api user --jq .login` |
+| `base_branch` | `git symbolic-ref refs/remotes/origin/HEAD` (falls back to the current branch) |
+| `repo` | `gh repo view --json nameWithOwner --jq .nameWithOwner` |
+| `plans_dir` / `qa_dir` | an existing `docs/plans/` or `docs/qa/` in the repo |
+
+These four are not cosmetic: `pr.sh` builds the branch name from `github_user`,
+targets `base_branch`, and the artifact hook refuses pushes to it. A wrong guess
+here produces a loop that fails at its first push.
+
+**If the repo git-ignores `docs/plans/` or `docs/qa/`, say so.** The generated
+setup treats them as visible-but-unstaged working artifacts, and an ignore rule
+makes three shared files describe a mechanism the repo does not have.
+
 ## Phase 2 — Confirm every detection
 
 Present findings with their evidence and confirm via `AskUserQuestion` — one question

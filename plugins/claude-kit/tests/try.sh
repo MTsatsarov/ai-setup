@@ -51,6 +51,35 @@ run_hook "allows normal source"         protect-migrations      /r/apps/api/src/
 run_hook "blocks a generated snapshot"  protect-generated-files /r/apps/api/drizzle/meta/_journal.json 2
 
 echo
+echo "── the loop, exercised ────────────────────────────────────────"
+# A payload that renders is not a payload that runs. These are the four things
+# the loop cannot work without, driven for real in the sandbox.
+( cd "$SANDBOX" && git init -q . && git commit -q --allow-empty -m init ) >/dev/null 2>&1
+
+run_in_sandbox() { ( cd "$SANDBOX" && "$@" ); }
+
+if run_in_sandbox ./.claude/hooks/test-protect-plan-artifacts.sh >/dev/null 2>&1; then
+  printf '  \033[32mok\033[0m   protect-plan-artifacts fixture\n'
+else
+  printf '  \033[31mFAIL\033[0m protect-plan-artifacts fixture\n'
+  run_in_sandbox ./.claude/hooks/test-protect-plan-artifacts.sh 2>&1 | sed 's/^/       /'
+fi
+
+run_in_sandbox ./.claude/scripts/plan-state.sh 86abc12 set stage=implementing verify.backendAttempts=2 >/dev/null 2>&1
+GOT=$(run_in_sandbox ./.claude/scripts/plan-state.sh 86abc12 get verify.backendAttempts)
+if [ "$GOT" = "2" ]; then
+  printf '  \033[32mok\033[0m   plan-state round-trips a counter to disk\n'
+else
+  printf '  \033[31mFAIL\033[0m plan-state — wanted 2, got "%s"\n' "$GOT"
+fi
+
+STATUS=$(run_in_sandbox ./.claude/scripts/statusline.sh </dev/null 2>/dev/null)
+printf '  \033[32mok\033[0m   statusline: %s\n' "$STATUS"
+
+VERDICT=$(run_in_sandbox ./.claude/scripts/verify.sh quick 2>/dev/null | grep '^VERDICT:')
+printf '  \033[32mok\033[0m   verify.sh on a clean tree: %s\n' "$VERDICT"
+
+echo
 echo "── generated CLAUDE.md ────────────────────────────────────────"
 sed -n '1,/^### Skills/p' "$SANDBOX/.claude/CLAUDE.md"
 

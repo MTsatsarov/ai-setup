@@ -6,6 +6,13 @@
   "description": "Work is not tracked in a tool.",
   "vars": {
     "name": "none",
-    "id_example": ""
+    "id_example": "punch-card-expiry",
+    "id_pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+    "id_description": "a kebab-case slug derived from your description (e.g. punch-card-expiry)",
+    "branch_segments": "2",
+    "has_tracker": "",
+    "state_fields": "",
+    "mcp_get": "",
+    "title_prefix": ""
   }
 }

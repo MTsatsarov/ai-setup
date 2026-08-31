@@ -1,0 +1,91 @@
+# Shared: Run Report
+
+**This is not a skill** — it is executed by the final stage of any run that
+reaches `ready`.
+
+## Why this exists
+
+It is the success-path mirror of `stop-record.md`. A run that *fails* has
+something to say to a human who is not looking; a run that **succeeds** has
+exactly as much to say, and the same nobody is looking at it:
+
+| Produced by a finished run | Why the terminal is the wrong place for it |
+|---|---|
+| **Needs-author-decision findings** | never auto-applied (invariant 8), so they are still open |
+| **Deliberately deferred scope** | the parts of the task this work does not cover |
+| **What was actually verified** | which tier ran, and what it did *not* cover |
+| **Where the work is** | on a branch, in a draft PR nobody has been told about |
+
+There is a second failure mode this prevents. A report with nowhere to go does
+not evaporate — it gets put somewhere, and the nearest writable surface is the
+pull request description. Invariant 12 exists because that is a bad place for
+it: reviewers get a wall of process, and the author's open questions are buried
+in it.
+
+## The contract
+
+Write the file **before** printing anything, then set the state:
+
+```bash
+.claude/scripts/plan-state.sh <ID> set stage=ready report.path=docs/plans/<ID>.report.md
+```
+
+### Path resolution matters here
+
+By the final stage the task worktree is normally **already gone** — the
+self-check stage removes it after pushing. A report written there is destroyed
+at the moment it is created. Always resolve the main checkout first:
+
+```bash
+MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+```
+
+### The template — `docs/plans/<ID>.report.md`
+
+```markdown
+# Done: <ID> — <one-line summary>
+
+**Recorded:** <ISO timestamp>
+**Baseline:** <baseline.head> — everything below is this run's work
+**Verify:** <tier> · <scope> · VERDICT: PASS · attempts backend <n>/tests <n>
+**Self-check:** <n> findings fixed over <r> round(s)
+**PR:** <number and URL> — still a draft (invariant 6)
+**Branch:** <name> — the worktree still holds it
+
+## What changed and why
+## Scope
+## Verification
+## Manual QA
+## Self-check
+## Needs your decision
+## Follow-ups not in this PR
+## Next commands
+```
+
+Omit sections that have no content, with two exceptions: **Needs your decision**
+and **Manual QA** always appear, and say `none` / `not warranted` when empty. An
+absent section reads as "not checked"; an explicit `none` reads as "checked,
+nothing for you".
+
+## Reconstructing it
+
+Under **one stage per invocation** the earlier stages ran in other contexts, so
+this stage does not have the run in its own history. Rebuild it from the
+artifacts, which is exactly what they are for:
+
+| Field | Source |
+|---|---|
+| stages, verify tier and verdict, attempt counts | `plan-state.sh <ID> show` |
+| what was asked for | `docs/plans/<ID>.md` |
+| what self-check found | `docs/plans/<ID>-fixes.md` |
+| files and shape of the change | `git diff --stat`, `git status --porcelain -uall` |
+| QA advice | `qa.warranted` / `qa.what` in the state file |
+
+**If a value is genuinely not recorded anywhere, say so in the report** —
+"attempt count not recorded" is honest; an invented number is not.
+
+## Never in the pull request
+
+No `gh pr edit`, no `--body` / `--body-file`, no `gh pr comment`, no
+`gh api …/issues/<n>/comments`. The report is for the author, and it lives in
+`docs/plans/`.

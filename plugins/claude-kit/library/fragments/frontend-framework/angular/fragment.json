@@ -17,7 +17,8 @@
       "Frontend and backend are **separate concerns** — never mix them in a single agent",
       "Components are standalone — there is no NgModule to register them in"
     ],
-    "plain_field": "      <label for=\"name\">Name</label>\n      <input id=\"name\" formControlName=\"name\" />\n\n      @if (form.controls.name.touched && form.controls.name.invalid) {\n        <small class=\"text-red-600\">Name is required (max 200).</small>\n      }\n"
+    "plain_field": "      <label for=\"name\">Name</label>\n      <input id=\"name\" formControlName=\"name\" />\n\n      @if (form.controls.name.touched && form.controls.name.invalid) {\n        <small class=\"text-red-600\">Name is required (max 200).</small>\n      }\n",
+    "dev_port": "4200"
   },
   "provides": {
     "frontend-api-client": "slots/frontend-api-client.md",
@@ -42,6 +43,9 @@
         "Never leave a manual `subscribe` without teardown — prefer the `async` pipe or `takeUntilDestroyed`",
         "Never touch backend code"
       ]
+    },
+    "qa-web": {
+      "description": "Drives the running app in a real browser to execute a QA test plan. Reports findings with evidence; never edits code."
     }
   },
   "scaffold": {
@@ -65,7 +69,45 @@
     }
   },
   "verify": {
-    "build": "npm --prefix angular run build"
+    "build": "npm --prefix angular run build",
+    "area": "frontend",
+    "steps": [
+      {
+        "order": 20,
+        "name": "frontend-lint",
+        "tiers": [
+          "quick",
+          "full",
+          "integration"
+        ],
+        "run": "npm --prefix angular run lint"
+      },
+      {
+        "order": 21,
+        "name": "frontend-build",
+        "tiers": [
+          "quick",
+          "full",
+          "integration"
+        ],
+        "run": "npm --prefix angular run build"
+      },
+      {
+        "order": 50,
+        "name": "frontend-test",
+        "tiers": [
+          "full",
+          "integration"
+        ],
+        "run": "npm --prefix angular run test -- --watch=false --browsers=ChromeHeadless"
+      }
+    ],
+    "err_patterns": [
+      "error TS[0-9]+",
+      "✖",
+      "^ERROR",
+      "npm ERR"
+    ]
   },
   "settings": {
     "enabledPlugins": [
