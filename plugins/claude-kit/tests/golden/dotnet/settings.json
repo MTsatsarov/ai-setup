@@ -22,6 +22,15 @@
             "command": ".claude/hooks/protect-migrations.sh"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/protect-plan-artifacts.sh"
+          }
+        ]
       }
     ],
     "Notification": [
@@ -46,5 +55,9 @@
         ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": ".claude/scripts/statusline.sh"
   }
 }

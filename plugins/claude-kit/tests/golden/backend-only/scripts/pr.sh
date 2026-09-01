@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+# =====================================================
+# pr.sh — branch, commit, push, open a draft PR
+# =====================================================
+#
+#   pr.sh <task-id> <branch-slug> <commit-message>
+#
+# This is the SINGLE CHOKE POINT for creating a remote branch and a pull
+# request. Nothing else in the workflow is permitted to push a new branch or run
+# `gh pr create`, which is what makes "every PR this loop opens is a draft" a
+# property of the system rather than a promise in prose.
+#
+# It writes the PR handoff into the state file itself, so the caller never
+# retypes a number it just read off the terminal.
+#
+# PR_NO_WEB=1 suppresses opening the PR in a browser.
+# =====================================================
+set -e
+
+BASE_BRANCH="main"
+
+# =====================================================
+# ENV / CONTEXT
+# =====================================================
+command -v gh >/dev/null 2>&1 || { echo "❌ GitHub CLI (gh) is required"; exit 1; }
+gh auth status  >/dev/null 2>&1 || { echo "❌ gh is not authenticated"; exit 1; }
+gh repo view    >/dev/null 2>&1 || { echo "❌ this directory is not a GitHub repository"; exit 1; }
+
+GITHUB_USER=$(gh api user --jq .login)
+CURRENT_BRANCH=$(git branch --show-current)
+
+TASK_ID="$1"
+BRANCH_SLUG="$2"
+COMMIT_MESSAGE="$3"
+
+[[ -z "$COMMIT_MESSAGE" ]] && { echo "❌ commit message missing"; exit 1; }
+
+if [[ -z "$TASK_ID" ]]; then
+  # Segment 2 is the id under both branch conventions.
+  TASK_ID=$(printf '%s\n' "$CURRENT_BRANCH" | awk -F/ 'NF>=2 {print $2}')
+fi
+[[ -z "$TASK_ID" ]] && { echo "❌ could not determine the task id from the branch name or arguments"; exit 1; }
+[[ -z "$BRANCH_SLUG" ]] && BRANCH_SLUG="$TASK_ID"
+
+# =====================================================
+# GUARDS
+# =====================================================
+# `git diff` and `git diff --cached` are blind to UNTRACKED files, so a guard
+# built on them aborts on the most common shape of work here: a change that only
+# ADDS files. By then the expensive stages have already run.
+#
+# `git status --porcelain` sees untracked files. The pathspec is the same one
+# the staging step uses, so "there is something to commit" and "something will
+# be committed" cannot disagree.
+ARTIFACT_EXCLUDES=(":(exclude)docs/plans" ":(exclude)docs/qa")
+
+CHANGES=$(git status --porcelain -uall -- ':/' "${ARTIFACT_EXCLUDES[@]}")
+if [[ -z "$CHANGES" ]]; then
+  echo "❌ nothing to commit outside docs/plans/ and docs/qa/"
+  exit 1
+fi
+
+# =====================================================
+# BRANCH
+# =====================================================
+# Only create a branch when sitting on the base branch. If a task branch is
+# already checked out — which is the normal case under /ship, where the worktree
+# was created with the branch — keep it.
+if [[ "$CURRENT_BRANCH" == "$BASE_BRANCH" ]]; then
+  BRANCH_NAME="$GITHUB_USER/$BRANCH_SLUG"
+  git checkout -b "$BRANCH_NAME"
+else
+  BRANCH_NAME="$CURRENT_BRANCH"
+fi
+
+# =====================================================
+# STAGE + COMMIT
+# =====================================================
+# Never `git add -A` unqualified: the artifact dirs are deliberately not
+# git-ignored (invariant 2), so a blanket stage sweeps them into the PR. This is
+# not hypothetical — it is the exact bug this pathspec was written to fix.
+git add -A -- ':/' "${ARTIFACT_EXCLUDES[@]}"
+
+# Backstop. If the pathspec above ever stops matching what the guard checked,
+# this is the line that notices before the commit exists rather than after.
+if git diff --cached --name-only | grep -qE '^(docs/plans|docs/qa)/'; then
+  echo "❌ a workflow artifact is staged — refusing to commit (invariant 2)"
+  git diff --cached --name-only | grep -E '^(docs/plans|docs/qa)/'
+  exit 1
+fi
+
+git commit -m "$COMMIT_MESSAGE"
+git push -u origin "$BRANCH_NAME"
+
+# =====================================================
+# PULL REQUEST
+# =====================================================
+# Always a draft (invariant 6). Marking a PR ready is a claim about confidence,
+# and it is not this script's to make.
+PR_TITLE="$COMMIT_MESSAGE"
+
+if ! PR_URL=$(gh pr create \
+      --draft \
+      --base "$BASE_BRANCH" \
+      --head "$BRANCH_NAME" \
+      --title "$PR_TITLE" \
+      --body "$COMMIT_MESSAGE" \
+      --assignee "$GITHUB_USER" 2>&1); then
+  # An existing PR for this branch is not an error — it is the resume path.
+  PR_URL=$(gh pr view "$BRANCH_NAME" --json url --jq .url 2>/dev/null) || {
+    echo "❌ could not create or find a PR for $BRANCH_NAME"; exit 1; }
+fi
+
+PR_NUMBER=$(gh pr view "$BRANCH_NAME" --json number --jq .number)
+PR_DRAFT=$(gh pr view "$BRANCH_NAME" --json isDraft --jq .isDraft)
+
+# =====================================================
+# HANDOFF
+# =====================================================
+# Resolve plan-state.sh next to THIS script rather than through the working
+# directory: under /ship this runs inside a linked worktree, where a
+# toplevel-relative path points at the wrong tree.
+STATE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/plan-state.sh"
+if [[ -x "$STATE" ]]; then
+  "$STATE" "$TASK_ID" set \
+    branchName="$BRANCH_NAME" \
+    baseRefName="$BASE_BRANCH" \
+    prNumber="$PR_NUMBER" \
+    prUrl="$PR_URL" \
+    isDraft="$PR_DRAFT" \
+    stage=pr-open
+fi
+
+[[ -z "${PR_NO_WEB:-}" ]] && gh pr view --web >/dev/null 2>&1 || true
+
+echo ""
+echo '```pr'
+echo "PR_NUMBER=$PR_NUMBER"
+echo "PR_URL=$PR_URL"
+echo "PR_DRAFT=$PR_DRAFT"
+echo "BRANCH=$BRANCH_NAME"
+echo "BASE=$BASE_BRANCH"
+echo '```'
+echo ""
+echo "Next: /pr-self-check $PR_NUMBER"
+echo "Note: CI does not run on draft PRs in most setups — mark it ready yourself when you want it to."

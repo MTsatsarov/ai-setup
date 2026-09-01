@@ -23,6 +23,8 @@
 ### Agents
 - `backend-developer` — TypeScript backend only — NestJS modules/controllers/services, DTOs, guards. Never touches frontend code.
 - `frontend-developer` — React (Vite) SPA frontend only — route components, the API client, React Router, and forms. Never touches backend code.
+- `backend-tester` — TypeScript backend tests only — Jest specs for the API. Writes tests for code it did not write, and never edits production code to make one pass.
+- `qa-web` — Drives the running app in a real browser to execute a QA test plan. Reports findings with evidence; never edits code.
 
 ### Skills
 
@@ -33,12 +35,74 @@
 - `backend-models`
 - `backend-module`
 - `backend-permissions`
+- `backend-tests`
+
+**Workflow**
+- `create-task`
+- `implement-plan`
+- `manual-qa`
+- `plan-task`
+- `pr`
+- `pr-self-check`
+- `pr-watch`
+- `review-pr`
+- `self-check`
+- `ship`
+- `verify-change`
 
 **Frontend**
 - `frontend-api-client`
 - `frontend-components`
 - `frontend-forms`
 - `frontend-pages`
+
+### Branching
+
+`<github-user>/<task-id>/<branch-slug>`, off `main`.
+Created by `.claude/scripts/pr.sh`, which is the only thing permitted to push a
+new branch or open a PR — and every PR it opens is a draft.
+
+### The loop
+
+```
+/loop /ship 86abc12
+```
+
+One stage per invocation, each in a fresh context, re-armed by `ScheduleWakeup`:
+
+```
+(no state) → planned → implementing → verified → pr-open → self-checked → ready
+          ↘ (any boundary) ─────────────────────────────────────────────→ stopped
+```
+
+Every stage can also be run by hand: `/plan-task` → `/implement-plan` →
+`/verify-change` → `/pr` → `/pr-self-check` → `/loop 15m /pr-watch`.
+
+Two rules carry the whole design:
+
+- **`.claude/scripts/verify.sh` is the only thing that decides whether a change
+  works.** Never run the underlying build, lint or test commands by hand and
+  judge the output yourself. Only its `VERDICT:` block counts.
+- **Attempt counters live in `docs/plans/<ID>.state.json`, never in
+  your head.** A compact resets what is only in context, which is exactly the
+  runaway a bounded loop exists to prevent — read them back before continuing.
+
+`docs/plans/**` and `docs/qa/**` are working artifacts.
+They are deliberately **not** git-ignored, so they stay visible in `git status`
+and keeping them out of the index stays an active decision.
+
+### Loop Safety Invariants
+
+The canonical list is `.claude/skills/shared/safety-invariants.md`. Everything
+defers to it; this is a pointer, not a second copy. The four that matter most:
+
+1. **Never run destructive git** — no `checkout`/`restore`/`stash`/`clean`/`reset --hard`.
+2. **Never stage or commit `docs/plans/**` or `docs/qa/**`.**
+3. **Never commit or push on a non-`PASS` verdict.**
+4. **Never reach green by disabling a check.**
+
+Invariants 1, 2 and 5 are enforced by `.claude/hooks/protect-plan-artifacts.sh`.
+The rest are prose — which is exactly why they are written down once.
 
 
 <!--

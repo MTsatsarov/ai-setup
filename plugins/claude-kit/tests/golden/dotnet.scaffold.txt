@@ -32,7 +32,4 @@ Environment (.env.example, 2 key(s)):
   ConnectionStrings__Default
   NG_APP_API_URL
 
-This machine does not meet the requirements yet:
-  ✗ node 22.16.0 is too old — frontend-framework/angular needs >= 22.22.3
-
 Nothing was written — this was --dry-run.

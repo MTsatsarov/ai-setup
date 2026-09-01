@@ -75,7 +75,23 @@ export function loadLibrary() {
   }
 
   const axes = axesDoc.axes.filter((a) => !a.id.startsWith('$'));
-  return { axes, slots: slotsDoc.slots, agents: slotsDoc.agents, fragments };
+
+  // `$comment` is used throughout these manifests to carry design rationale,
+  // including INSIDE the maps. Strip those keys once, here, so no consumer has
+  // to remember that an entry might be documentation rather than a definition.
+  const defs = (map) =>
+    Object.fromEntries(Object.entries(map ?? {}).filter(([k]) => !k.startsWith('$')));
+
+  // `shared` and `scripts` are optional and default to {} so a library that
+  // predates them still loads — every consumer iterates, none indexes blindly.
+  return {
+    axes,
+    slots: defs(slotsDoc.slots),
+    shared: defs(slotsDoc.shared),
+    scripts: defs(slotsDoc.scripts),
+    agents: defs(slotsDoc.agents),
+    fragments,
+  };
 }
 
 export const fragmentOf = (lib, axisId, option) => lib.fragments.get(`${axisId}/${option}`);

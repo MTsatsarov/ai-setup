@@ -85,9 +85,11 @@ trees, Drizzle via typed column maps.
 
 ### Skills each answer generates
 
-Two agents, each dropped when its axis is `none`: **`backend-developer`**
-(`backend-framework`) and **`frontend-developer`** (`frontend-framework`). An agent's
-`skills:` list is exactly the skills in its group — kept in one place, so it cannot drift.
+Four agents, each dropped when its axis is `none`: **`backend-developer`** and
+**`backend-tester`** (`backend-framework`), **`frontend-developer`** and
+**`qa-web`** (`frontend-framework`). An agent's `skills:` list is exactly the
+skills in its group — kept in one place, so it cannot drift. Workflow skills
+belong to no agent, which is the one deliberate exception.
 
 **Backend** (under `backend-developer`):
 
@@ -99,9 +101,10 @@ Two agents, each dropped when its axis is `none`: **`backend-developer`**
 | `backend-service` / `backend-module` | backend-framework | always — NestJS renames it to `backend-module` (controller+service+module folded together); ASP.NET keeps `backend-service` |
 | `backend-controller` | backend-framework | ASP.NET only (NestJS folds the HTTP layer into `backend-module`) |
 | `backend-code-quality` | backend-framework (+ orm, authz) | always |
+| `backend-tests` | backend-framework (+ orm) | always — owned by the `backend-tester` agent, because an implementer writing its own tests writes tests that agree with it |
 | `backend-permissions` | authz (+ framework) | only when `authz = rbac` |
 
-→ NestJS = **5** skills (6 with RBAC); ASP.NET = **6** (7 with RBAC).
+→ NestJS = **6** skills (7 with RBAC); ASP.NET = **7** (8 with RBAC).
 
 **Frontend** (under `frontend-developer`):
 
@@ -120,10 +123,51 @@ routing; `frontend-components` teaches shadcn copy-in / MUI `sx`+theme / PrimeNG
 `auth`, `mapping` and `tracker` shape the skills above (and `CLAUDE.md`) through injected
 sections rather than owning a skill of their own.
 
-The floor is **0 skills** (backend + frontend both `none`); the ceiling is **11** (ASP.NET +
-RBAC + any real frontend + any real UI kit).
+Plus the **9 workflow skills** every project gets, and two more that are
+conditional: `create-task` with a tracker, `manual-qa` with a frontend.
 
-Deferred: mobile axes and the workflow skills (`plan-task`, `implement-plan`, `pr`, …).
+So a generated payload ranges from **16 skills** (NestJS, no frontend, no
+tracker) to **24** (ASP.NET + RBAC + a real frontend and UI kit + a tracker).
+
+### The loop
+
+Beyond stack knowledge, every generated payload carries a **closed loop**: a
+resumable stage machine that takes a task from a sentence to a reviewed draft PR.
+
+```
+/loop /ship "punch cards should expire a year after the last visit"
+
+(no state) → planned → implementing → verified → pr-open → self-checked → ready
+          ↘ (any boundary) ─────────────────────────────────────────────→ stopped
+```
+
+Four properties, each earned from a failure the naive version hits:
+
+| Property | Mechanism | Failure it prevents |
+|---|---|---|
+| One definition of done | `scripts/verify.sh` prints a `VERDICT:` block and is the only thing allowed to decide | the model marking its own homework |
+| Durable counters | written to `docs/plans/<id>.state.json` **before** each attempt | a compact silently granting 3 fresh attempts |
+| One stage per invocation | each stage ends the turn and re-arms via `ScheduleWakeup` | a mega-context that compacts mid-run |
+| Durable stops | the reason is written to a file before it is printed | an unattended run stalling with its reason in lost scrollback |
+
+Underneath sits `skills/shared/safety-invariants.md` — one canonical list, with
+an explicit table of which rules a hook enforces and which are only prose.
+
+**Workflow skills** (`Workflow` group, owned by no axis, driven by you or by
+`/loop`): `plan-task`, `implement-plan`, `verify-change`, `self-check`, `pr`,
+`pr-self-check`, `pr-watch`, `review-pr`, `ship` — plus `create-task` when there
+is a tracker and `manual-qa` when there is a frontend.
+
+**With no tracker**, the loop is ticket-less rather than degraded: the task is
+described on the command line, the id is a slug derived from it, branches are
+two segments instead of three, and there is no drift check because nothing
+external can change underneath the run.
+
+`verify.sh`, `plan-state.sh`, `pr.sh` and `statusline.sh` are generated too —
+`verify.sh`'s legs come from each fragment's declared steps, so adding an ORM or
+a frontend extends the gate rather than forking it.
+
+Deferred: mobile axes, and device/emulator QA.
 
 ## Repo layout
 
@@ -137,7 +181,9 @@ plugins/claude-kit/
   scripts/lib/{erb,library}.mjs
   library/axes.json                                the interview
   library/slots.json                               slot -> owning axis
-  library/base/                                    CLAUDE.md, agent, hook templates
+  library/base/                                    CLAUDE.md, README, agent, hook templates
+  library/base/skills/                             the workflow loop + shared/ includes
+  library/base/scripts/                            verify.sh, plan-state.sh, pr.sh, statusline.sh
   library/fragments/<axis>/<option>/               fragment.json + slots/ + sections/ + conventions/
   tests/                                           fixtures, golden trees, runner
 ```

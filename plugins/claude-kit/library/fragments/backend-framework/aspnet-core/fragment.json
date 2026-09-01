@@ -4,9 +4,10 @@
   "axis": "backend-framework",
   "label": "ASP.NET Core Web API (C#)",
   "description": "Controller-based Web API — ControllerBase + attribute routing, a scoped service layer, DI via the built-in container, DataAnnotations/FluentValidation on request models, Swagger from the OpenAPI package.",
-
-  "traits": { "language": "csharp", "runtime": "dotnet" },
-
+  "traits": {
+    "language": "csharp",
+    "runtime": "dotnet"
+  },
   "vars": {
     "name": "ASP.NET Core",
     "src_dir": "src/<% project.pascal %>.Api",
@@ -20,21 +21,23 @@
       "No business logic in controllers — controllers delegate to a scoped service",
       "Request models are validated before the service is reached; services assume valid input",
       "A listing endpoint's query surface is exactly what the service's `Filterable`/`Sortable` allowlists declare — never widen one without meaning to"
-    ]
+    ],
+    "test_dir": "tests/<% project.pascal %>.Tests",
+    "test_match": "^tests/",
+    "test_project": "<% project.pascal %>.Tests"
   },
-
   "provides": {
     "backend-models": "slots/backend-models.md",
     "backend-service": "slots/backend-service.md",
     "backend-controller": "slots/backend-controller.md",
-    "backend-code-quality": "slots/backend-code-quality.md"
+    "backend-code-quality": "slots/backend-code-quality.md",
+    "backend-tests": "slots/backend-tests.md"
   },
-
   "contributes": {
     "claude-md#stack": "sections/claude-stack.md",
-    "backend-permissions#enforcement": "sections/permissions-enforcement.md"
+    "backend-permissions#enforcement": "sections/permissions-enforcement.md",
+    "review-pipeline#known_noise": "sections/known-noise.md"
   },
-
   "agent": {
     "backend-developer": {
       "description": "C# backend only — ASP.NET Core controllers, scoped services, EF Core entities and migrations, DTOs. Never touches frontend code.",
@@ -51,26 +54,98 @@
         "Every public async method returns `Task`/`Task<T>` and is awaited — no `.Result` or `.Wait()`",
         "Never touch frontend code"
       ]
+    },
+    "backend-tester": {
+      "description": "C# backend tests only — xUnit test projects under tests/. Writes tests for code it did not write, and never edits production code to make one pass.",
+      "lsp_trace": "a service method to the behaviour its callers depend on",
+      "impl_order": "arrange (fixtures/fakes) → act (the service or endpoint under test) → assert (one behaviour per test)",
+      "context": [
+        "Tests live in `<% backend.test_dir %>`, mirroring the folder layout of `<% backend.src_dir %>`",
+        "The test project is `<% backend.test_project %>`; add it to the solution rather than creating a new one per feature",
+        "xUnit: `[Fact]` for a single case, `[Theory]` + `[InlineData]` for a table of cases"
+      ],
+      "rules": [
+        "Never mark a test `Skip` to get past a failure — a skipped test reports success forever",
+        "Assert on the returned value or the persisted state, never on how many times a mock was called, unless the call itself is the behaviour"
+      ]
     }
   },
-
   "scaffold": {
     "$comment": "Verified against the .NET 10 SDK. Note `dotnet new sln` now emits a .slnx (XML) file, not .sln — so the verify command must let dotnet auto-discover the solution rather than naming a .sln path.",
     "commands": [
-      { "run": "dotnet new sln --name <% project.pascal %>" },
-      { "run": "dotnet new webapi --use-controllers --name <% project.pascal %>.Api --output src/<% project.pascal %>.Api" },
-      { "run": "dotnet sln add src/<% project.pascal %>.Api/<% project.pascal %>.Api.csproj" },
-      { "run": "dotnet add src/<% project.pascal %>.Api package Swashbuckle.AspNetCore" },
-      { "run": "rm -f src/<% project.pascal %>.Api/WeatherForecast.cs src/<% project.pascal %>.Api/Controllers/WeatherForecastController.cs", "note": "the template's sample endpoint is replaced by the first real feature" }
+      {
+        "run": "dotnet new sln --name <% project.pascal %>"
+      },
+      {
+        "run": "dotnet new webapi --use-controllers --name <% project.pascal %>.Api --output src/<% project.pascal %>.Api"
+      },
+      {
+        "run": "dotnet sln add src/<% project.pascal %>.Api/<% project.pascal %>.Api.csproj"
+      },
+      {
+        "run": "dotnet add src/<% project.pascal %>.Api package Swashbuckle.AspNetCore"
+      },
+      {
+        "run": "rm -f src/<% project.pascal %>.Api/WeatherForecast.cs src/<% project.pascal %>.Api/Controllers/WeatherForecastController.cs",
+        "note": "the template's sample endpoint is replaced by the first real feature"
+      }
     ],
     "conventions": [
-      { "from": "conventions/files/AuditedEntity.cs", "to": "<% backend.common_dir %>/Entities/AuditedEntity.cs" },
-      { "from": "conventions/files/Pagination.cs", "to": "<% backend.common_dir %>/Models/Pagination.cs" },
-      { "from": "conventions/files/QueryableFilterExtensions.cs", "to": "<% backend.common_dir %>/Models/QueryableFilterExtensions.cs" },
-      { "from": "conventions/files/launchSettings.json", "to": "<% backend.src_dir %>/Properties/launchSettings.json" }
+      {
+        "from": "conventions/files/AuditedEntity.cs",
+        "to": "<% backend.common_dir %>/Entities/AuditedEntity.cs"
+      },
+      {
+        "from": "conventions/files/Pagination.cs",
+        "to": "<% backend.common_dir %>/Models/Pagination.cs"
+      },
+      {
+        "from": "conventions/files/QueryableFilterExtensions.cs",
+        "to": "<% backend.common_dir %>/Models/QueryableFilterExtensions.cs"
+      },
+      {
+        "from": "conventions/files/launchSettings.json",
+        "to": "<% backend.src_dir %>/Properties/launchSettings.json"
+      }
     ]
   },
-
-  "verify": { "build": "dotnet build" },
-  "settings": { "enabledPlugins": ["csharp-lsp@claude-plugins-official"] }
+  "verify": {
+    "build": "dotnet build",
+    "area": "backend",
+    "steps": [
+      {
+        "order": 10,
+        "name": "backend-build",
+        "tiers": [
+          "quick",
+          "tests",
+          "full",
+          "integration"
+        ],
+        "run": "dotnet build <% backend.solution %> -v q --nologo"
+      },
+      {
+        "order": 40,
+        "name": "backend-test",
+        "area": "tests",
+        "tiers": [
+          "tests",
+          "full",
+          "integration"
+        ],
+        "run": "dotnet test <% backend.solution %> -v q --nologo --no-build"
+      }
+    ],
+    "err_patterns": [
+      "error [A-Z]{2}[0-9]{4}",
+      "Build FAILED",
+      "Failed!",
+      "error :"
+    ]
+  },
+  "settings": {
+    "enabledPlugins": [
+      "csharp-lsp@claude-plugins-official"
+    ]
+  }
 }

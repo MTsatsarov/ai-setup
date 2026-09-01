@@ -33,20 +33,43 @@ export function buildPayload(plan) {
   const put = (path, content, mode = 0o644) => files.set(path, { content: tidy(content), mode });
   const v = plan.vars;
 
-  /* Skills ------------------------------------------------------------- */
-  for (const slot of plan.slots) {
-    // Anchors render first — a contributed section may itself reference vars —
-    // then feed the owner body as scalars under the `sections` namespace.
+  /* Composition --------------------------------------------------------- */
+  //
+  // Anchors render first — a contributed section may itself reference vars —
+  // then feed the owner body as scalars under the `sections` namespace. Skills,
+  // shared includes and scripts all compose identically; only the destination
+  // path and the file mode differ.
+  const compose = (entry) => {
     const sections = {};
-    for (const [anchor, src] of Object.entries(slot.anchors ?? {})) {
+    for (const [anchor, src] of Object.entries(entry.anchors ?? {})) {
       sections[anchor] = render(readTpl(src.file), v, src.file).trimEnd();
     }
 
-    let body = render(readTpl(slot.body), { ...v, sections }, slot.body);
-    for (const app of slot.appends ?? []) {
+    let body = render(readTpl(entry.body), { ...v, sections }, entry.body);
+    for (const app of entry.appends ?? []) {
       body = body.trimEnd() + '\n\n' + render(readTpl(app.file), v, app.file).trimEnd() + '\n';
     }
-    put(`skills/${slot.emit}/SKILL.md`, body);
+    return body;
+  };
+
+  /* Skills ------------------------------------------------------------- */
+  for (const slot of plan.slots) {
+    put(`skills/${slot.emit}/SKILL.md`, compose(slot));
+  }
+
+  /* Shared includes ------------------------------------------------------ */
+  // Not skills: no frontmatter, no SKILL.md wrapper, never invoked. The skills
+  // that depend on them are told to read them by path, which is exactly why
+  // there is one copy instead of one per caller.
+  for (const inc of plan.shared ?? []) {
+    put(`skills/shared/${inc.name}.md`, compose(inc));
+  }
+
+  /* Scripts -------------------------------------------------------------- */
+  // Executable, because every caller invokes them by path. Both source repos
+  // made chmod a manual setup step and both documented forgetting it.
+  for (const script of plan.scripts ?? []) {
+    put(`scripts/${script.name}`, compose(script), 0o755);
   }
 
   /* Agents -------------------------------------------------------------- */
@@ -61,6 +84,8 @@ export function buildPayload(plan) {
       .map((s) => render(readTpl(s.file), v, s.file).trimEnd())
       .join('\n');
   }
+  put('README.md', render(readBase('base/README.md.tmpl'), v, 'base/README.md.tmpl'));
+
   put(
     'CLAUDE.md',
     render(readBase('base/CLAUDE.md.tmpl'), { ...v, sections: claudeSections }, 'base/CLAUDE.md.tmpl'),
@@ -86,9 +111,14 @@ export function buildPayload(plan) {
     activeHooks.push(name);
   }
 
-  const reminder = render(readBase('base/hooks/post-compact-reminder.sh.tmpl'), v, 'base/hooks/post-compact-reminder.sh.tmpl');
-  put('hooks/post-compact-reminder.sh', reminder, 0o755);
-  activeHooks.push('post-compact-reminder');
+  // Base hooks take no fragment rules — they are the same guard in every
+  // project, parameterised only by paths — so they are emitted unconditionally
+  // rather than through the rule loop above.
+  for (const name of ['post-compact-reminder', 'protect-plan-artifacts', 'test-protect-plan-artifacts']) {
+    const tpl = `base/hooks/${name}.sh.tmpl`;
+    put(`hooks/${name}.sh`, render(readBase(tpl), v, tpl), 0o755);
+    activeHooks.push(name);
+  }
 
   /* settings.json ------------------------------------------------------- */
   // Built as an object rather than a template: JSON with <% each %> loops is a
@@ -106,6 +136,13 @@ export function buildPayload(plan) {
       hooks: [{ type: 'command', command: '.claude/hooks/protect-migrations.sh' }],
     });
   }
+  // Bash, not Edit|Write: this one inspects the command line, because staging
+  // an artifact and running destructive git are things you do with git, not
+  // with the file tools.
+  pre.push({
+    matcher: 'Bash',
+    hooks: [{ type: 'command', command: '.claude/hooks/protect-plan-artifacts.sh' }],
+  });
 
   const settings = {};
   if (plan.settings.enabledPlugins.length) {
@@ -126,6 +163,10 @@ export function buildPayload(plan) {
       ],
     },
   ];
+  // Zero-token progress: which task, which stage, how many attempts in. The
+  // loop runs one stage per invocation, so without this the only way to see
+  // where a run is up to is to open the state file.
+  settings.statusLine = { type: 'command', command: '.claude/scripts/statusline.sh' };
   settings.hooks.SessionStart = [
     {
       matcher: 'compact',
@@ -133,6 +174,56 @@ export function buildPayload(plan) {
     },
   ];
   put('settings.json', JSON.stringify(settings, null, 2));
+
+  // The allowlist an unattended run needs, as an EXAMPLE rather than a live
+  // settings.local.json. Granting a loop the right to run commands without
+  // asking should be an explicit human act, and this file is never read by
+  // Claude Code until someone renames it.
+  //
+  // Two absences are deliberate: bare `git push` and `gh pr create`. pr.sh is
+  // the single choke point for both and only ever opens drafts; granting the
+  // underlying commands hands that guarantee away for nothing.
+  const allow = [
+    'Bash(.claude/scripts/verify.sh:*)',
+    'Bash(.claude/scripts/plan-state.sh:*)',
+    'Bash(.claude/scripts/pr.sh:*)',
+    'Bash(.claude/scripts/statusline.sh)',
+    'Bash(.claude/hooks/test-protect-plan-artifacts.sh)',
+    'Bash(git status:*)',
+    'Bash(git diff:*)',
+    'Bash(git log:*)',
+    'Bash(git branch:*)',
+    'Bash(git rev-parse:*)',
+    'Bash(git merge-base:*)',
+    'Bash(git fetch:*)',
+    'Bash(git worktree:*)',
+    'Bash(git add:*)',
+    'Bash(git commit:*)',
+    // Only the refspec form /pr-self-check uses. The hook still blocks the
+    // force and base-branch forms, so this stays narrow on both sides.
+    'Bash(git push origin HEAD:*)',
+    'Bash(gh pr view:*)',
+    'Bash(gh pr diff:*)',
+    'Bash(gh pr checks:*)',
+    'Bash(gh api user:*)',
+    'Bash(jq:*)',
+  ];
+  if (plan.vars.frontend.enabled) allow.push('Bash(.claude/scripts/qa-env.sh:*)');
+
+  put(
+    'settings.local.example.json',
+    JSON.stringify(
+      {
+        $comment:
+          'Copy to settings.local.json to let an unattended /ship run proceed without a ' +
+          'permission prompt per command. Read every line first — this is the file that ' +
+          'decides what the loop may do while nobody is watching.',
+        permissions: { allow },
+      },
+      null,
+      2,
+    ),
+  );
 
   return files;
 }

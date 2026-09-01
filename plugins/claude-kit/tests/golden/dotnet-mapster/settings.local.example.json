@@ -1,0 +1,28 @@
+{
+  "$comment": "Copy to settings.local.json to let an unattended /ship run proceed without a permission prompt per command. Read every line first — this is the file that decides what the loop may do while nobody is watching.",
+  "permissions": {
+    "allow": [
+      "Bash(.claude/scripts/verify.sh:*)",
+      "Bash(.claude/scripts/plan-state.sh:*)",
+      "Bash(.claude/scripts/pr.sh:*)",
+      "Bash(.claude/scripts/statusline.sh)",
+      "Bash(.claude/hooks/test-protect-plan-artifacts.sh)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git merge-base:*)",
+      "Bash(git fetch:*)",
+      "Bash(git worktree:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push origin HEAD:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh api user:*)",
+      "Bash(jq:*)"
+    ]
+  }
+}

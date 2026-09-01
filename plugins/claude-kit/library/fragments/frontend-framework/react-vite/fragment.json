@@ -17,7 +17,8 @@
       "Frontend and backend are **separate concerns** — never mix them in a single agent",
       "This is a client-rendered SPA — there are no Server Components; every component runs in the browser"
     ],
-    "plain_field": "        <div className=\"space-y-2\">\n          <label htmlFor=\"name\">Name</label>\n          <input id=\"name\" {...register('name')} aria-invalid={!!errors.name} />\n          {errors.name && <p className=\"text-sm text-red-600\">{errors.name.message}</p>}\n        </div>\n"
+    "plain_field": "        <div className=\"space-y-2\">\n          <label htmlFor=\"name\">Name</label>\n          <input id=\"name\" {...register('name')} aria-invalid={!!errors.name} />\n          {errors.name && <p className=\"text-sm text-red-600\">{errors.name.message}</p>}\n        </div>\n",
+    "dev_port": "5173"
   },
   "provides": {
     "frontend-api-client": "slots/frontend-api-client.md",
@@ -43,6 +44,9 @@
         "The Vite tsconfig enables `erasableSyntaxOnly` — do not use TS parameter properties, enums or namespaces; declare class fields explicitly",
         "Never touch backend code"
       ]
+    },
+    "qa-web": {
+      "description": "Drives the running app in a real browser to execute a QA test plan. Reports findings with evidence; never edits code."
     }
   },
   "scaffold": {
@@ -64,19 +68,72 @@
       }
     ],
     "conventions": [
-      { "from": "conventions/files/vite.config.ts", "to": ".claude-kit/scaffold/react-vite/vite.config.ts", "phase": "pre" },
-      { "from": "conventions/files/tsconfig.json", "to": ".claude-kit/scaffold/react-vite/tsconfig.json", "phase": "pre" },
-      { "from": "conventions/files/tsconfig.app.json", "to": ".claude-kit/scaffold/react-vite/tsconfig.app.json", "phase": "pre" },
-      { "from": "conventions/files/index.css", "to": ".claude-kit/scaffold/react-vite/index.css", "phase": "pre" },
-      { "from": "conventions/files/main.tsx", "to": "<% frontend.src_dir %>/main.tsx", "phase": "post" },
-      { "from": "conventions/files/App.tsx", "to": "<% frontend.src_dir %>/App.tsx", "phase": "post" }
+      {
+        "from": "conventions/files/vite.config.ts",
+        "to": ".claude-kit/scaffold/react-vite/vite.config.ts",
+        "phase": "pre"
+      },
+      {
+        "from": "conventions/files/tsconfig.json",
+        "to": ".claude-kit/scaffold/react-vite/tsconfig.json",
+        "phase": "pre"
+      },
+      {
+        "from": "conventions/files/tsconfig.app.json",
+        "to": ".claude-kit/scaffold/react-vite/tsconfig.app.json",
+        "phase": "pre"
+      },
+      {
+        "from": "conventions/files/index.css",
+        "to": ".claude-kit/scaffold/react-vite/index.css",
+        "phase": "pre"
+      },
+      {
+        "from": "conventions/files/main.tsx",
+        "to": "<% frontend.src_dir %>/main.tsx",
+        "phase": "post"
+      },
+      {
+        "from": "conventions/files/App.tsx",
+        "to": "<% frontend.src_dir %>/App.tsx",
+        "phase": "post"
+      }
     ],
     "env": {
       "VITE_API_URL": "http://localhost:<% backend.dev_port %>"
     }
   },
   "verify": {
-    "build": "npm --prefix apps/web run build"
+    "build": "npm --prefix apps/web run build",
+    "area": "frontend",
+    "steps": [
+      {
+        "order": 20,
+        "name": "frontend-lint",
+        "tiers": [
+          "quick",
+          "full",
+          "integration"
+        ],
+        "run": "npm --prefix apps/web run lint"
+      },
+      {
+        "order": 21,
+        "name": "frontend-build",
+        "tiers": [
+          "quick",
+          "full",
+          "integration"
+        ],
+        "run": "npm --prefix apps/web run build"
+      }
+    ],
+    "err_patterns": [
+      "error TS[0-9]+",
+      "✖",
+      "Failed to compile",
+      "npm ERR"
+    ]
   },
   "settings": {
     "enabledPlugins": [

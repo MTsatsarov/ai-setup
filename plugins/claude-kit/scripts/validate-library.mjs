@@ -86,7 +86,9 @@ function checkStructure(lib) {
 
     for (const slot of Object.keys(frag.provides ?? {})) {
       if (!lib.slots[slot]) err(`${id}: provides unknown slot "${slot}"`);
-      else if (lib.slots[slot].owner_axis !== frag.axis) {
+      else if (lib.slots[slot].owner === 'base') {
+        err(`${id}: provides "${slot}", but that slot is base-owned — contribute to it instead`);
+      } else if (lib.slots[slot].owner_axis !== frag.axis) {
         err(`${id}: provides "${slot}", but that slot is owned by axis "${lib.slots[slot].owner_axis}"`);
       }
     }
@@ -96,6 +98,9 @@ function checkStructure(lib) {
     for (const target of Object.keys(frag.contributes ?? {})) {
       const [doc] = target.split('#');
       if (doc === 'claude-md') continue;
+      // Base-owned slots, shared includes and scripts are all legal targets —
+      // they are owned by no axis, so contributing to one is the only way in.
+      if (lib.shared[doc] || lib.scripts[doc]) continue;
       if (!lib.slots[doc]) err(`${id}: contributes to unknown slot "${doc}"`);
       else if (lib.slots[doc].owner_axis === frag.axis) {
         err(`${id}: contributes to "${doc}" which it already owns — put the content in the body`);
@@ -103,7 +108,36 @@ function checkStructure(lib) {
     }
   }
 
+  // Base-owned entries (slots, shared includes, scripts) share one contract:
+  // the body is a template under library/, no fragment provides it, and any
+  // gate axis must be real. Checked once for all three maps.
+  const checkBaseEntry = (kind, name, def) => {
+    if (!existsSync(join(PLUGIN_ROOT, 'library', def.body ?? ''))) {
+      err(`slots.json: ${kind} "${name}" body ${def.body} does not exist`);
+    }
+    for (const [ax, vals] of Object.entries(def.skip_when ?? {})) {
+      if (!axisIds.has(ax)) err(`slots.json: ${kind} "${name}" skip_when names unknown axis "${ax}"`);
+      else {
+        for (const v of vals) {
+          if (!axisById(lib, ax).options.includes(v)) {
+            err(`slots.json: ${kind} "${name}" skip_when ${ax}="${v}" is not an option of that axis`);
+          }
+        }
+      }
+    }
+    for (const ax of def.contributor_order ?? []) {
+      if (!axisIds.has(ax)) err(`slots.json: ${kind} "${name}" contributor_order names unknown axis "${ax}"`);
+    }
+  };
+
   for (const [slot, def] of Object.entries(lib.slots)) {
+    if (def.owner === 'base') {
+      checkBaseEntry('slot', slot, def);
+      if (def.owner_axis) {
+        err(`slots.json: "${slot}" declares both owner:"base" and owner_axis — pick one`);
+      }
+      continue;
+    }
     if (!axisIds.has(def.owner_axis)) {
       err(`slots.json: "${slot}" owner_axis "${def.owner_axis}" is not a declared axis`);
     }
@@ -113,6 +147,9 @@ function checkStructure(lib) {
     const providers = [...lib.fragments.values()].filter((f) => f.provides?.[slot]);
     if (!providers.length) err(`slots.json: no fragment provides "${slot}" — the slot is dead`);
   }
+
+  for (const [name, def] of Object.entries(lib.shared)) checkBaseEntry('shared', name, def);
+  for (const [name, def] of Object.entries(lib.scripts)) checkBaseEntry('script', name, def);
 
   for (const [name, def] of Object.entries(lib.agents ?? {})) {
     if (!existsSync(join(PLUGIN_ROOT, 'library', def.template))) {
