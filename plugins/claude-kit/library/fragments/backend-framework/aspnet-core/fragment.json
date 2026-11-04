@@ -147,5 +147,56 @@
     "enabledPlugins": [
       "csharp-lsp@claude-plugins-official"
     ]
-  }
+  },
+  "code_rules": [
+    {
+      "id": "backend-skipped-test",
+      "include": [
+        "<% backend.test_dir %>/*.cs"
+      ],
+      "pattern": "\\[(Fact|Theory)[^]]*Skip[[:space:]]*=",
+      "message": "A skipped test. Never reach green by disabling a check (safety invariant 4) — fix the test or stop and report.",
+      "sample": "<% backend.test_dir %>/Feature/FeatureServiceTests.cs",
+      "bad": "[Fact(Skip = \"flaky\")]",
+      "good": "[Fact]"
+    },
+    {
+      "id": "backend-suppressed-warning",
+      "include": [
+        "<% backend.src_dir %>/*.cs",
+        "<% backend.test_dir %>/*.cs"
+      ],
+      "pattern": "#pragma[[:space:]]+warning[[:space:]]+disable|SuppressMessage[[:space:]]*\\(",
+      "message": "A suppressed compiler or analyzer warning. Never reach green by disabling a check (safety invariant 4) — fix what the warning is pointing at.",
+      "sample": "<% backend.src_dir %>/Features/Feature/FeatureService.cs",
+      "bad": "#pragma warning disable CS8618",
+      "good": "public string Name { get; set; } = string.Empty;"
+    },
+    {
+      "id": "backend-nowarn",
+      "include": [
+        "*.csproj",
+        "*.props",
+        "*.targets"
+      ],
+      "pattern": "<NoWarn>|<TreatWarningsAsErrors>[[:space:]]*false",
+      "message": "A warning suppressed in the build file. Never reach green by disabling a check (safety invariant 4).",
+      "sample": "<% backend.src_dir %>/Feature.csproj",
+      "bad": "<NoWarn>CS1591</NoWarn>",
+      "good": "<Nullable>enable</Nullable>"
+    },
+    {
+      "id": "backend-cs-comment",
+      "kind": "comment",
+      "include": [
+        "<% backend.src_dir %>/*.cs",
+        "<% backend.test_dir %>/*.cs"
+      ],
+      "pattern": "^[[:space:]]*(//|/\\*)|[;{}),][[:space:]]*(//|/\\*)",
+      "message": "A new code comment. This project allows none, /// <summary> included — put the reasoning in the PR description.",
+      "sample": "<% backend.src_dir %>/Features/Feature/FeatureService.cs",
+      "bad": "var total = 1; // running total",
+      "good": "var url = \"http://example.com/a\";"
+    }
+  ]
 }

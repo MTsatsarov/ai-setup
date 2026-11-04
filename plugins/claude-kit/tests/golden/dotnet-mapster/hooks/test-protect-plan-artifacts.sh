@@ -84,8 +84,37 @@ expect blocked "$G push -f origin HEAD"
 expect blocked "$G push origin $BASE"
 expect blocked "$G push origin HEAD:$BASE"
 expect blocked "$G push origin HEAD:refs/heads/$BASE"
-expect allowed "$G push -u origin user/TASK-1/thing"
-expect allowed "$G push origin HEAD:refs/heads/user/TASK-1/thing"
+
+# --- push without a verify PASS ---------------------------------------------
+# Run against a throwaway repo that carries its own verify-stamp.sh, so the
+# gate applies to it and this fixture never records a stamp in a real repo.
+STAMP_SRC="$(cd "$(dirname "$HOOK")/../scripts" && pwd)/verify-stamp.sh"
+PUSHREPO=$(mktemp -d "${TMPDIR:-/tmp}/push-fixture.XXXXXX")
+trap 'rm -rf "$PUSHREPO"' EXIT
+mkdir -p "$PUSHREPO/.claude/scripts"
+cp "$STAMP_SRC" "$PUSHREPO/.claude/scripts/verify-stamp.sh"
+"$G" -C "$PUSHREPO" init -q .
+"$G" -C "$PUSHREPO" -c user.email=t@t -c user.name=t commit -q --allow-empty -m base
+
+expect_in() {  # expect_in <cwd> <blocked|allowed> <command>
+  local dir="$1" want="$2" cmd="$3" rc
+  jq -n --arg c "$cmd" --arg d "$dir" '{tool_input:{command:$c},cwd:$d}' | "$HOOK" >/dev/null 2>&1
+  rc=$?
+  local actual="allowed"; [[ $rc -eq 2 ]] && actual="blocked"
+  if [[ "$actual" == "$want" ]]; then PASS=$((PASS+1)); else
+    FAIL=$((FAIL+1)); echo "  ✗ expected $want, got $actual (exit $rc) in $dir: $cmd"; fi
+}
+
+expect_in "$PUSHREPO" blocked "$G push -u origin user/TASK-1/thing"
+expect_in /           blocked "cd $PUSHREPO && $G push -u origin user/TASK-1/thing"
+expect_in /           blocked "$G -C $PUSHREPO push origin HEAD"
+# Deleting a remote branch carries no code.
+expect_in "$PUSHREPO" allowed "$G push origin --delete user/TASK-1/thing"
+
+"$STAMP_SRC" record "$PUSHREPO" "$("$STAMP_SRC" head "$PUSHREPO")"
+expect_in "$PUSHREPO" allowed "$G push -u origin user/TASK-1/thing"
+expect_in "$PUSHREPO" allowed "$G push origin HEAD:refs/heads/user/TASK-1/thing"
+expect_in /           allowed "$G -C $PUSHREPO push origin HEAD"
 
 # --- a statement that merely mentions an artifact path ----------------------
 # Each guard asks "does THIS command do X to Y". Asking it of a whole blob

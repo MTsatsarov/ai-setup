@@ -60,7 +60,13 @@ defers to it; this is a pointer, not a second copy. The four that matter most:
 4. **Never reach green by disabling a check.**
 
 Invariants 1, 2 and 5 are enforced by `.claude/hooks/protect-plan-artifacts.sh`.
-The rest are prose — which is exactly why they are written down once.
+Invariant 3 is enforced by `.claude/scripts/verify-stamp.sh`: `pr.sh` and the
+push guard refuse any tree `verify.sh` did not pass.
+<% if code_rules.enabled %>The mechanical code rules — skipped tests, suppressed warnings, `any`<% if code_rules.has_comments %>, new comments<% end %> and
+the rest listed in `.claude/hooks/code-rules.sh` — are blocked on Edit/Write,
+and `verify.sh` fails on them over the branch. **A block is a rule break: fix
+the code, never the rule.**
+<% end %>The rest are prose — which is exactly why they are written down once.
 
 
 <!--

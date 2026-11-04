@@ -7,6 +7,8 @@
       "Bash(.claude/scripts/pr.sh:*)",
       "Bash(.claude/scripts/statusline.sh)",
       "Bash(.claude/hooks/test-protect-plan-artifacts.sh)",
+      "Bash(.claude/hooks/test-code-rules.sh)",
+      "Bash(.claude/scripts/list-skills.sh:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",

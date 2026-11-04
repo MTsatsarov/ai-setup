@@ -9,11 +9,17 @@ argument-hint: <PR number>
 Same pipeline as `/self-check`; opposite terminal state. This one **never edits
 code**. It reports.
 
-## Step 1 — Run the pipeline
+## Step 1 — Get the findings
 
-Read `.claude/skills/shared/review-pipeline.md` in full and execute it over the
-PR diff. It creates the review worktree; removing it is this skill's job, after
-posting or declining.
+Dispatch the `pr-reviewer` agent with the PR brief from the **Dispatch**
+section of `.claude/skills/shared/review-pipeline.md` — verbatim, nothing
+added. Do not review the PR yourself, and do not add, drop or soften any
+finding it returns: the agent's list *is* the finding set. Use its `repeat_of`
+field to collapse repeats and its `postable` field for findings outside the
+diff.
+
+The agent leaves the review worktree in place and names it in its output;
+removing it is this skill's job, after posting or declining.
 
 ## Step 2 — Phrase the findings
 

@@ -14,9 +14,17 @@ Hold `.claude/skills/shared/safety-invariants.md` throughout.
 
 ## Step 1 — Fresh findings
 
-Read `.claude/skills/shared/review-pipeline.md` in full and execute it over the
-PR diff. Create the review worktree it describes; **leave it in place** — removal
-is this skill's job, and only at the very end.
+Dispatch the `pr-reviewer` agent with the PR brief from the **Dispatch**
+section of `.claude/skills/shared/review-pipeline.md` — verbatim, nothing
+added. Under `/ship`, append `reuse-worktree <the run's worktree>` so the
+review reads the branch exactly as the run left it.
+
+Do not review the PR yourself, and do not add, drop or soften any finding it
+returns: the agent's list *is* the finding set. Reviewing your own PR in the
+context that wrote it is precisely the anchoring the agent exists to avoid.
+
+The agent leaves the worktree in place and names it in its output — removal is
+this skill's job, and only at the very end.
 
 ## Step 2 — Existing human comments
 
@@ -54,9 +62,11 @@ The report must be the **final message of the turn**.
 
 ## Step 6 — Fix, re-verify, re-review
 
-Delegate by area. Then `.claude/scripts/verify.sh full`. Then re-run the
-pipeline with the worktree reused — round 2 costs a fraction of round 1, which
-is what makes iterating to zero findings affordable.
+Delegate by area. Then `.claude/scripts/verify.sh full`. Then dispatch a
+**fresh** `pr-reviewer` with the same brief plus `reuse-worktree <path>` —
+round 2 costs a fraction of round 1, which is what makes iterating to zero
+findings affordable. Never continue the round-1 agent: it would re-review
+anchored on its own earlier list.
 
 Round counter in `selfCheck.round`, **written before the round runs**, capped
 at 2.
@@ -69,6 +79,10 @@ excludes, and never the artifact dirs themselves.
 ```bash
 git push origin HEAD:refs/heads/<headRefName>
 ```
+
+The push guard blocks any HEAD whose tree `verify.sh` never passed (invariant
+3). Commit everything the last `full` run verified — leave a file out and HEAD
+is code that was never verified as a whole, so the push is refused.
 
 Then, and only then, `git worktree remove --force <path>`. Pushing after the
 removal pushes nothing.

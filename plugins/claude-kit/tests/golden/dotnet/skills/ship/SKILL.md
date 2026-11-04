@@ -139,11 +139,22 @@ if ! git worktree list | grep -q "$WORKTREE"; then
   git fetch origin main
   git worktree add "$WORKTREE" -b "$USER/<ID>/$SLUG" origin/main
 fi
+ln -sfn "$MAIN"/angular/node_modules "$WORKTREE"/angular/node_modules
 "$MAIN"/.claude/scripts/plan-state.sh <ID> set worktree="$WORKTREE"
 ```
 
+The empty-slug guard is not defensive padding: without it the branch name ends
+in `/` and `git worktree add` fails with `not a valid branch name`, several
+stages away from the actual cause.
+
+A fresh worktree has no `node_modules`, so the first `verify.sh` in it would
+fail on missing packages and burn a fix attempt on a non-problem. The symlinks
+reuse the main checkout's install; they are idempotent, like the rest of this
+stage. If the plan changes a `package.json`, install in the worktree instead.
+
 A worktree keeps the main checkout and its uncommitted work untouched for the
-twenty minutes this run takes.
+twenty minutes this run takes. `git add -A` inside `pr.sh` is safe **only**
+because of this isolation — never run `/ship` directly in the main checkout.
 
 **Stage 2b** — execute `/implement-plan <ID>` inside the worktree. Its own
 self-check step is **skipped here**; Stage 4 runs it as its own stage, and doing

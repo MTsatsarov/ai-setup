@@ -19,6 +19,7 @@
 ### Agents
 - `backend-developer` — C# backend only — ASP.NET Core controllers, scoped services, EF Core entities and migrations, DTOs. Never touches frontend code.
 - `backend-tester` — C# backend tests only — xUnit test projects under tests/. Writes tests for code it did not write, and never edits production code to make one pass.
+- `pr-reviewer` — Reviews one change — a PR or a working-tree diff — with the shared review pipeline, in a clean context, and returns the raw finding list. Never edits code, never posts to GitHub.
 
 ### Skills
 
@@ -33,6 +34,7 @@
 
 **Workflow**
 - `implement-plan`
+- `list-skills`
 - `plan-task`
 - `pr`
 - `pr-self-check`
@@ -88,6 +90,12 @@ defers to it; this is a pointer, not a second copy. The four that matter most:
 4. **Never reach green by disabling a check.**
 
 Invariants 1, 2 and 5 are enforced by `.claude/hooks/protect-plan-artifacts.sh`.
+Invariant 3 is enforced by `.claude/scripts/verify-stamp.sh`: `pr.sh` and the
+push guard refuse any tree `verify.sh` did not pass.
+The mechanical code rules — skipped tests, suppressed warnings, `any` and
+the rest listed in `.claude/hooks/code-rules.sh` — are blocked on Edit/Write,
+and `verify.sh` fails on them over the branch. **A block is a rule break: fix
+the code, never the rule.**
 The rest are prose — which is exactly why they are written down once.
 
 

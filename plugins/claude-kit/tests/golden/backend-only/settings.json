@@ -10,15 +10,14 @@
           {
             "type": "command",
             "command": ".claude/hooks/protect-generated-files.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
+          },
           {
             "type": "command",
             "command": ".claude/hooks/protect-migrations.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/code-rules.sh"
           }
         ]
       },

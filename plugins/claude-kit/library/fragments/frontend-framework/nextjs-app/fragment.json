@@ -106,5 +106,90 @@
     "enabledPlugins": [
       "typescript-lsp@claude-plugins-official"
     ]
-  }
+  },
+  "code_rules": [
+    {
+      "id": "frontend-ts-suppress",
+      "include": [
+        "<% frontend.src_dir %>/*.ts",
+        "<% frontend.src_dir %>/*.tsx",
+        "<% frontend.app_dir %>/*.test.ts",
+        "<% frontend.app_dir %>/*.test.tsx",
+        "<% frontend.app_dir %>/*.spec.ts",
+        "<% frontend.app_dir %>/*.spec.tsx"
+      ],
+      "pattern": "@ts-ignore|@ts-expect-error|@ts-nocheck|eslint-disable",
+      "message": "A suppressed type or lint error. Never reach green by disabling a check (safety invariant 4) — fix the code the checker is pointing at.",
+      "sample": "<% frontend.src_dir %>/lib/feature.ts",
+      "bad": "// @ts-ignore",
+      "good": "const total = items.length;"
+    },
+    {
+      "id": "frontend-any",
+      "include": [
+        "<% frontend.src_dir %>/*.ts",
+        "<% frontend.src_dir %>/*.tsx"
+      ],
+      "exclude": [
+        "<% frontend.app_dir %>/*.test.ts",
+        "<% frontend.app_dir %>/*.test.tsx",
+        "<% frontend.app_dir %>/*.spec.ts",
+        "<% frontend.app_dir %>/*.spec.tsx"
+      ],
+      "pattern": ":[[:space:]]*any([^[:alnum:]_$]|$)|[[:space:]]as[[:space:]]+any([^[:alnum:]_$]|$)|<any>|(^|[^[:alnum:]_$])any\\[\\]",
+      "message": "An 'any' type. Use the real type, or 'unknown' and narrow it (widening to any is also safety invariant 4).",
+      "sample": "<% frontend.src_dir %>/lib/feature.ts",
+      "bad": "const value: any = load();",
+      "good": "const value: unknown = load();"
+    },
+    {
+      "id": "frontend-as-unknown-as",
+      "include": [
+        "<% frontend.src_dir %>/*.ts",
+        "<% frontend.src_dir %>/*.tsx"
+      ],
+      "exclude": [
+        "<% frontend.app_dir %>/*.test.ts",
+        "<% frontend.app_dir %>/*.test.tsx",
+        "<% frontend.app_dir %>/*.spec.ts",
+        "<% frontend.app_dir %>/*.spec.tsx"
+      ],
+      "pattern": "as[[:space:]]+unknown[[:space:]]+as[[:space:]]",
+      "message": "An 'as unknown as' double cast. It switches the type checker off; parse or construct the real type instead.",
+      "sample": "<% frontend.src_dir %>/lib/feature.ts",
+      "bad": "const user = raw as unknown as User;",
+      "good": "const user = parseUser(raw);"
+    },
+    {
+      "id": "frontend-focused-test",
+      "include": [
+        "<% frontend.app_dir %>/*.test.ts",
+        "<% frontend.app_dir %>/*.test.tsx",
+        "<% frontend.app_dir %>/*.spec.ts",
+        "<% frontend.app_dir %>/*.spec.tsx"
+      ],
+      "pattern": "(^|[^[:alnum:]_.$])(xit|xdescribe|fit|fdescribe)[[:space:]]*\\(|(it|describe|test)\\.(skip|only)[[:space:]]*\\(",
+      "message": "A skipped or focused test. Never reach green by disabling a check (safety invariant 4) — fix the test or stop and report.",
+      "sample": "<% frontend.src_dir %>/lib/feature.test.ts",
+      "bad": "it.skip('loads', () => {});",
+      "good": "it('loads', () => {});"
+    },
+    {
+      "id": "frontend-ts-comment",
+      "kind": "comment",
+      "include": [
+        "<% frontend.src_dir %>/*.ts",
+        "<% frontend.src_dir %>/*.tsx",
+        "<% frontend.app_dir %>/*.test.ts",
+        "<% frontend.app_dir %>/*.test.tsx",
+        "<% frontend.app_dir %>/*.spec.ts",
+        "<% frontend.app_dir %>/*.spec.tsx"
+      ],
+      "pattern": "^[[:space:]]*(//|/\\*)|[;{}),][[:space:]]*(//|/\\*)",
+      "message": "A new code comment. This project allows none, doc comments included — put the reasoning in the PR description.",
+      "sample": "<% frontend.src_dir %>/lib/feature.ts",
+      "bad": "const total = 1; // running total",
+      "good": "const url = 'http://example.com/a';"
+    }
+  ]
 }

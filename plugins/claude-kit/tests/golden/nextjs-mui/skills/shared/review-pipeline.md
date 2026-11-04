@@ -1,8 +1,8 @@
 # Shared: Review Pipeline
 
-**This is not a skill** — it is the review engine. `/self-check` and
-`/review-pr` both execute it; they differ only in what they do with the
-findings.
+**This is not a skill** — it is the review engine. The `pr-reviewer` agent
+executes it on behalf of `/self-check`, `/pr-self-check` and `/review-pr`; they
+differ only in what they do with the findings.
 
 ## Why a second pass exists at all
 
@@ -31,16 +31,88 @@ regardless of who wrote the code — **reviewing your own work is held to the
 identical standard, and is not a reason for leniency**. The calling skill
 phrases and routes findings; it never filters, softens, or skips them.
 
-**Worktree.** When the caller created one, the pipeline leaves it in place.
-Removing it is the caller's job, and only after the caller is done with it.
+**Worktree.** The pipeline never removes a worktree, whether it created it or
+was handed it. Removing it is the caller's job, and only after the caller is
+done with it. The main checkout is never touched — no branch switch, no stash.
+
+## Dispatch — how a calling skill runs this pipeline
+
+**A calling skill never executes this pipeline inline.** It dispatches the
+`pr-reviewer` agent (Agent tool, `subagent_type: pr-reviewer`) with one of these
+briefs, verbatim — fill the placeholders, add nothing:
+
+```
+Review PR #<PR>. Main repo: <absolute main checkout path>.
+```
+
+```
+Review the working-tree change in <absolute path>. Main repo: <absolute main checkout path>.
+```
+
+For a re-review of a PR worktree the caller has since edited, append one line:
+
+```
+reuse-worktree <absolute worktree path>
+```
+
+Do **not** add the task id, the plan, the change's purpose, which skill is
+asking, that the change is the caller's own, what an earlier round fixed, or any
+instruction to focus on or skip something. Each of those changes the finding
+set, and the Completeness contract forbids that. Resolve the main checkout with
+`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`.
+
+The agent returns the finding list in the format its definition
+(`.claude/agents/pr-reviewer.md`) fixes. The caller takes those findings as they
+are — it phrases and routes them, it never re-reviews, adds to or drops from
+them.
+
+## Step 0 — The code under review
+
+**Working-tree mode** — `$WORKTREE` is the path in the brief. Review it as it
+stands; create nothing.
+
+**PR mode** — check the PR out in its own detached worktree, so LSP can analyse
+the real code (the diff alone is not enough for Step 6) and the main checkout's
+branch, index and uncommitted work stay exactly as they are:
+
+```bash
+gh pr view $PR --json title,headRefName,baseRefName
+WORKTREE=~/repos/nextjs-mui-worktrees/pr-$PR
+git worktree remove --force "$WORKTREE" 2>/dev/null; git worktree prune   # a crashed run's leftover
+git fetch origin "pull/$PR/head:refs/pr-review/$PR" --force
+mkdir -p ~/repos/nextjs-mui-worktrees
+git worktree add --detach "$WORKTREE" "refs/pr-review/$PR"
+git update-ref -d "refs/pr-review/$PR"
+```
+
+Detached, so no local branch is created that could collide with one checked out
+elsewhere. A namespaced ref rather than `FETCH_HEAD`, so concurrent reviews do
+not race.
+
+**Round-2 reuse.** With `reuse-worktree <path>` in the brief, `$WORKTREE` is
+that path. If `git worktree list` shows it, **skip the remove / fetch / add
+block** and review the code as it now stands — the caller has just fixed things
+there. Still run `gh pr view` for the branch names.
+
+**Dependencies, for LSP.** A fresh worktree has no `node_modules`. Link the main
+checkout's instead of installing (skip it on round-2 reuse — already done):
+
+```bash
+MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+ln -sfn "$MAIN"/apps/api/node_modules "$WORKTREE"/apps/api/node_modules
+ln -sfn "$MAIN"/apps/web/node_modules "$WORKTREE"/apps/web/node_modules
+```
 
 ## Step 1 — Establish the change set
 
+Run everything below in `$WORKTREE`. `<base>` is `origin/<baseRefName>` in PR
+mode and `origin/main` in working-tree mode.
+
 ```bash
-BASE=$(git merge-base HEAD origin/main)
-git diff --name-only "$BASE"                              # tracked
-git status --porcelain -uall | awk '$1=="??" {print $2}'  # untracked
-git diff "$BASE"                                          # the actual diff
+BASE=$(git -C "$WORKTREE" merge-base HEAD <base>)
+git -C "$WORKTREE" diff --name-only "$BASE"                              # tracked
+git -C "$WORKTREE" status --porcelain -uall | awk '$1=="??" {print $2}'  # untracked
+git -C "$WORKTREE" diff "$BASE"                                          # the actual diff
 ```
 
 **`-uall` is load-bearing.** Without it `git status --porcelain` collapses a new

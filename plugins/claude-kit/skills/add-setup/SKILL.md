@@ -73,6 +73,10 @@ These four are not cosmetic: `pr.sh` builds the branch name from `github_user`,
 targets `base_branch`, and the artifact hook refuses pushes to it. A wrong guess
 here produces a loop that fails at its first push.
 
+**Ask whether to block new code comments** (`block_comments`, default `false`).
+Nothing in a repo is evidence for it — a codebase with few comments may be a
+habit, not a rule — so it is the one project field asked rather than detected.
+
 **If the repo git-ignores `docs/plans/` or `docs/qa/`, say so.** The generated
 setup treats them as visible-but-unstaged working artifacts, and an ignore rule
 makes three shared files describe a mechanism the repo does not have.

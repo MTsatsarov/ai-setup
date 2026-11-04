@@ -14,8 +14,11 @@ particular.
 
 ## Step 1 — Run the review pipeline
 
-Read `.claude/skills/shared/review-pipeline.md` in full and execute it over the
-working-tree change set.
+Dispatch the `pr-reviewer` agent with the working-tree brief from the
+**Dispatch** section of `.claude/skills/shared/review-pipeline.md` — verbatim,
+nothing added, with the absolute path of the tree you are working in. Do not
+review the change yourself, and do not add, drop or soften any finding it
+returns: the agent's list *is* the finding set.
 
 Reviewing your own work is not a reason for leniency. The pipeline's
 completeness contract is explicit that the finding set does not depend on who
@@ -98,9 +101,10 @@ verbatim:
 
 ## Step 7 — Re-review, the exit condition
 
-Re-run the pipeline over the **fixed** code. This is what makes this a loop
-rather than a single pass: fixes introduce their own findings, and one pass never
-sees them.
+Dispatch a **fresh** `pr-reviewer` over the **fixed** code, with the same
+brief. This is what makes this a loop rather than a single pass: fixes introduce
+their own findings, and one pass never sees them. Never continue the round-1
+agent — it would re-review anchored on its own earlier list.
 
 **Read the round number from the state file, and write it before the round
 runs:**
