@@ -173,6 +173,26 @@
         }
       }
     },
+    "code_rules": {
+      "type": "array",
+      "description": "Mechanical code rules for the files this fragment owns, enforced by the generated hooks/code-rules.sh (blocks an edit that increases the match count) and by verify.sh over the branch. Every rule is replayed by the generated test-code-rules.sh with its sample/bad/good.",
+      "items": {
+        "type": "object",
+        "required": ["id", "include", "pattern", "message", "sample", "bad", "good"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "description": "Unique across every fragment that can be selected together." },
+          "kind": { "enum": ["comment"], "description": "comment: emitted only when project.block_comments is true." },
+          "include": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "Repo-relative bash globs; `*` also matches `/`." },
+          "exclude": { "type": "array", "items": { "type": "string" } },
+          "pattern": { "type": "string", "description": "POSIX ERE, as grep -E reads it." },
+          "message": { "type": "string" },
+          "sample": { "type": "string", "description": "A path the include globs match, for the fixture." },
+          "bad": { "type": "string", "description": "One line the pattern must match." },
+          "good": { "type": "string", "description": "One line no rule for the sample path may match." }
+        }
+      }
+    },
     "scaffold": {
       "type": "object",
       "additionalProperties": false,

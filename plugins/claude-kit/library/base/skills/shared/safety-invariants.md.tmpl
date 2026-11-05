@@ -82,15 +82,22 @@ noted below — and where it is not, the prose is all there is.
 |---|---|
 | 1 destructive git | `hooks/protect-plan-artifacts.sh` (PreToolUse, Bash) |
 | 2 artifacts | same hook — both the named-path and the blanket-stage guards |
-| 5 force-push / base-branch push | same hook |
+| 3 no commit or push without a PASS | `scripts/verify-stamp.sh`: `verify.sh` records the tree it passed; `pr.sh` refuses to commit and the hook above refuses to push any other tree |
+<% if code_rules.enabled %>| 4 disabling a check | `hooks/code-rules.sh` (PreToolUse, Edit/Write) blocks new skipped tests, suppressed warnings and `any`; `verify.sh` runs the same rules over the whole branch |
+<% end %>| 5 force-push / base-branch push | `hooks/protect-plan-artifacts.sh` |
 <% each hooks.all %>| 7 generated files | `hooks/<% .name %>.sh` |
-<% end %>| 3, 4, 6, 8, 9, 10, 11, 12 | **prose only** |
-
-The hook ships with a fixture. Run it after **any** edit to its patterns:
+<% end %>| <% unless code_rules.enabled %>4, <% end %>6, 8, 9, 10, 11, 12 | **prose only** |
+<% if code_rules.enabled %>
+Invariant 4 is only partly mechanical: the hook catches the forms that are a
+text pattern. A loosened assertion or a deleted test is not one, and the prose
+above still governs it.
+<% end %>
+Each hook ships with a fixture. Run it after **any** edit to its patterns:
 
 ```bash
 .claude/hooks/test-protect-plan-artifacts.sh
-```
+<% if code_rules.enabled %>.claude/hooks/test-code-rules.sh
+<% end %>```
 
 That fixture is not optional politeness. A PreToolUse hook that errors exits 2,
 which the harness reads as *blocked* — so a guard broken by a stray character

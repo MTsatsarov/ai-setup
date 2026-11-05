@@ -217,6 +217,14 @@
       "composite": false,
       "$comment": "Owned by the tracker axis, so tracker/none simply provides no body and a project without a tracker has no such skill — the ui-kit/none precedent. With the task described on the command line there is nothing to create."
     },
+    "list-skills": {
+      "owner": "base",
+      "body": "base/skills/list-skills/SKILL.md.tmpl",
+      "group": "Workflow",
+      "agent": null,
+      "composite": false,
+      "$comment": "Answers 'what have we got?' from the SKILL.md frontmatter at run time via scripts/list-skills.sh — the one roster that cannot drift."
+    },
     "manual-qa": {
       "owner": "base",
       "body": "base/skills/manual-qa/SKILL.md.tmpl",
@@ -283,6 +291,14 @@
     "verify.sh": {
       "body": "base/scripts/verify.sh.tmpl"
     },
+    "verify-stamp.sh": {
+      "body": "base/scripts/verify-stamp.sh.tmpl",
+      "$comment": "Turns invariant 3 from prose into a check: verify.sh records the tree hash it passed, and pr.sh plus the push guard refuse any tree not on the list. A content address, so a PASS in one worktree counts in every other."
+    },
+    "list-skills.sh": {
+      "body": "base/scripts/list-skills.sh.tmpl",
+      "$comment": "Reads SKILL.md frontmatter at run time, so the inventory it prints cannot drift the way the rosters in README.md and CLAUDE.md can."
+    },
     "statusline.sh": {
       "body": "base/scripts/statusline.sh.tmpl"
     },
@@ -339,6 +355,16 @@
         "description"
       ],
       "$comment": "Owns no skill group: it follows shared/qa-test-plan.md, which is an include rather than a skill. bowly's qa agents pointed `skills:` at that file and it silently resolved to nothing — declaring the absence is the fix."
+    },
+    "pr-reviewer": {
+      "template": "base/agents/pr-reviewer.md.tmpl",
+      "required_axis": "backend-framework",
+      "no_skills": true,
+      "requires_vars": ["description"],
+      "vars": {
+        "description": "Reviews one change — a PR or a working-tree diff — with the shared review pipeline, in a clean context, and returns the raw finding list. Never edits code, never posts to GitHub."
+      },
+      "$comment": "Runs shared/review-pipeline.md in a clean context for every caller (/review-pr, /pr-self-check, /self-check). A reviewer that shares a context with the implementer anchors on why each line is right and finds less. Stack-independent: the pipeline loads the stack's skills itself, so the agent contributes no vars."
     }
   }
 }

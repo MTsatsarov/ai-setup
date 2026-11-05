@@ -30,6 +30,12 @@
 # =====================================================
 set -uo pipefail
 
+# Resolved before any cd: the script can be called by a relative path, and
+# under /ship it runs from the main checkout against a worktree.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+STAMP="$SCRIPT_DIR/verify-stamp.sh"
+CODE_RULES="$(cd "$SCRIPT_DIR/../hooks" && pwd)/code-rules.sh"
+
 TIER="${1:-quick}"
 SCOPE="${2:-auto}"
 WORKDIR="${3:-}"
@@ -84,14 +90,25 @@ changed_files() {
 
 CHANGED=$(changed_files)
 
+# Safety invariant 3. The tree this run vouches for is hashed before any step
+# runs, so an edit made while the run is going yields a different hash, and a
+# PASS can only ever stand for the code that was actually built and tested.
+# pr.sh and the push guard in hooks/protect-plan-artifacts.sh check against it.
+VERIFIED_TREE=$("$STAMP" tree "$WORKDIR" 2>/dev/null || true)
+
 # Areas may overlap on purpose — a changed test file belongs to `tests` for
 # routing and still needs the backend leg to compile.
+#
+# The auto scope is computed even when a caller names one, because a stamp may
+# only be recorded for a run that covered every area the change touches: a
+# `backend` PASS says nothing about a frontend file in the same tree.
+AUTO_SCOPE=""
+printf '%s\n' "$CHANGED" | grep -qE '^src/ReactShadcn.Api/' && AUTO_SCOPE="${AUTO_SCOPE:+$AUTO_SCOPE,}backend"
+printf '%s\n' "$CHANGED" | grep -qE '^tests/' && AUTO_SCOPE="${AUTO_SCOPE:+$AUTO_SCOPE,}tests"
+printf '%s\n' "$CHANGED" | grep -qE '^apps/web/' && AUTO_SCOPE="${AUTO_SCOPE:+$AUTO_SCOPE,}frontend"
+
 if [[ "$SCOPE" == "auto" ]]; then
-  SCOPE=""
-  printf '%s\n' "$CHANGED" | grep -qE '^src/ReactShadcn.Api/' && SCOPE="${SCOPE:+$SCOPE,}backend"
-  printf '%s\n' "$CHANGED" | grep -qE '^tests/' && SCOPE="${SCOPE:+$SCOPE,}tests"
-  printf '%s\n' "$CHANGED" | grep -qE '^apps/web/' && SCOPE="${SCOPE:+$SCOPE,}frontend"
-  [[ -z "$SCOPE" ]] && SCOPE="none"
+  SCOPE="${AUTO_SCOPE:-none}"
 elif [[ "$SCOPE" == "all" ]]; then
   SCOPE="backend,tests,frontend"
 fi
@@ -177,6 +194,12 @@ guards
 # Phase A runs every leg that does not own tests, concurrently: they share no
 # build output and each step is a single mostly-single-threaded process.
 LEG_PIDS=()
+# The mechanical rules of hooks/code-rules.sh over the whole branch. The hook
+# sees only Edit and Write; this step also catches what was written through
+# Bash. The `tests` tier is the tester's inner loop and skips it.
+if [[ "$SCOPE" != "none" && "$TIER" != "tests" ]]; then
+  step 5 "code-rules" "$CODE_RULES" --diff "$WORKDIR" & LEG_PIDS+=($!)
+fi
 [[ $run_backend -eq 1 ]] && { leg_backend & LEG_PIDS+=($!); }
 [[ $run_frontend -eq 1 ]] && { leg_frontend & LEG_PIDS+=($!); }
 # Guarded rather than "${LEG_PIDS[@]:-}": under `set -u` an empty array expansion
@@ -201,6 +224,25 @@ WARNINGS=""
 
 FAILED=0
 printf '%s\n' "$RESULTS" | grep -q '|FAIL|' && FAILED=1
+
+# =====================================================
+# STAMP — what pr.sh and the push guard will accept
+# =====================================================
+# Only a PASS that covered every area the change touches counts, and never the
+# `tests` tier: it skips the compile-only legs, so its PASS does not clear a
+# commit.
+covers_auto_scope() {
+  local a
+  [[ -z "$AUTO_SCOPE" ]] && return 0
+  IFS=',' read -ra _AUTO <<< "$AUTO_SCOPE"
+  for a in "${_AUTO[@]}"; do
+    [[ ",$SCOPE," == *",$a,"* ]] || return 1
+  done
+  return 0
+}
+if [[ $FAILED -eq 0 && "$TIER" != "tests" && -n "$VERIFIED_TREE" ]] && covers_auto_scope; then
+  "$STAMP" record "$WORKDIR" "$VERIFIED_TREE" || true
+fi
 
 # One merged log, steps in verdict order — the `LOG:` line stays a single path.
 : >"$LOG"

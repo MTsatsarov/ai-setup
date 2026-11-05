@@ -109,28 +109,35 @@ done
 # inverted: a PreToolUse hook that errors exits 2, which the harness reads as
 # "blocked". A guard broken by an unquoted `|` inside `[[ =~ ]]` looks identical
 # to a working one right up until it blocks something you needed.
+#
+# Every fixture, not one: the code rules differ per stack, and a rule whose ERE
+# matches nothing is exactly as silent as a hook that errors.
 step "generated hooks"
-HOOKSB=$(mktemp -d)
-if node scripts/resolve.mjs --answers tests/fixtures/nextjs-shadcn.answers.json --out "$HOOKSB/plan.json" --quiet \
-   && node scripts/render.mjs --plan "$HOOKSB/plan.json" --out "$HOOKSB/.claude" >/dev/null; then
-  ( cd "$HOOKSB" && git init -q . && git commit -q --allow-empty -m init ) >/dev/null 2>&1
-  OUT_HOOK=$( cd "$HOOKSB" && ./.claude/hooks/test-protect-plan-artifacts.sh 2>&1 )
-  if [ $? -eq 0 ]; then
-    pass "protect-plan-artifacts — $(printf '%s' "$OUT_HOOK" | tail -1)"
+for fixture in tests/fixtures/*.answers.json; do
+  name=$(basename "$fixture" .answers.json)
+  HOOKSB=$(mktemp -d)
+  if node scripts/resolve.mjs --answers "$fixture" --out "$HOOKSB/plan.json" --quiet \
+     && node scripts/render.mjs --plan "$HOOKSB/plan.json" --out "$HOOKSB/.claude" >/dev/null; then
+    ( cd "$HOOKSB" && git init -q . && git commit -q --allow-empty -m init ) >/dev/null 2>&1
+    for t in "$HOOKSB"/.claude/hooks/test-*.sh; do
+      OUT_HOOK=$( cd "$HOOKSB" && "$t" 2>&1 )
+      if [ $? -eq 0 ]; then
+        pass "$name — $(printf '%s' "$OUT_HOOK" | tail -1)"
+      else
+        printf '%s\n' "$OUT_HOOK"
+        fail "$name — $(basename "$t")"
+      fi
+    done
+    # Every generated shell file must at least parse. A template that renders a
+    # syntax error still writes a file, and nothing else here would notice.
+    for f in "$HOOKSB"/.claude/hooks/*.sh "$HOOKSB"/.claude/scripts/*.sh; do
+      if ! bash -n "$f" 2>/dev/null; then fail "$name — syntax error in $(basename "$f")"; fi
+    done
   else
-    printf '%s\n' "$OUT_HOOK"
-    fail "protect-plan-artifacts fixture"
+    fail "$name — generated hooks (render)"
   fi
-  # Every generated shell file must at least parse. A template that renders a
-  # syntax error still writes a file, and nothing else here would notice.
-  for f in "$HOOKSB"/.claude/hooks/*.sh "$HOOKSB"/.claude/scripts/*.sh; do
-    if ! bash -n "$f" 2>/dev/null; then fail "syntax error in $(basename "$f")"; fi
-  done
-  pass "generated shell parses"
-else
-  fail "generated hooks (render)"
-fi
-rm -rf "$HOOKSB"
+  rm -rf "$HOOKSB"
+done
 
 # --- 5. the scripts must work from a symlinked install path -------------------
 # import.meta.url resolves symlinks, process.argv[1] does not. A naive main-module

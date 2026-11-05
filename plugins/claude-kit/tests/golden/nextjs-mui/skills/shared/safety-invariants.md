@@ -82,15 +82,22 @@ noted below — and where it is not, the prose is all there is.
 |---|---|
 | 1 destructive git | `hooks/protect-plan-artifacts.sh` (PreToolUse, Bash) |
 | 2 artifacts | same hook — both the named-path and the blanket-stage guards |
-| 5 force-push / base-branch push | same hook |
+| 3 no commit or push without a PASS | `scripts/verify-stamp.sh`: `verify.sh` records the tree it passed; `pr.sh` refuses to commit and the hook above refuses to push any other tree |
+| 4 disabling a check | `hooks/code-rules.sh` (PreToolUse, Edit/Write) blocks new skipped tests, suppressed warnings and `any`; `verify.sh` runs the same rules over the whole branch |
+| 5 force-push / base-branch push | `hooks/protect-plan-artifacts.sh` |
 | 7 generated files | `hooks/protect-migrations.sh` |
 | 7 generated files | `hooks/protect-generated-files.sh` |
-| 3, 4, 6, 8, 9, 10, 11, 12 | **prose only** |
+| 6, 8, 9, 10, 11, 12 | **prose only** |
 
-The hook ships with a fixture. Run it after **any** edit to its patterns:
+Invariant 4 is only partly mechanical: the hook catches the forms that are a
+text pattern. A loosened assertion or a deleted test is not one, and the prose
+above still governs it.
+
+Each hook ships with a fixture. Run it after **any** edit to its patterns:
 
 ```bash
 .claude/hooks/test-protect-plan-artifacts.sh
+.claude/hooks/test-code-rules.sh
 ```
 
 That fixture is not optional politeness. A PreToolUse hook that errors exits 2,

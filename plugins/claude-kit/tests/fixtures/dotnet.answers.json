@@ -1,6 +1,6 @@
 {
-  "$comment": "ASP.NET Core + EF Core + AutoMapper + RBAC. Mirrors the reference project verified under the .NET 10 SDK.",
-  "project": { "name": "Demo CRM", "notification_title": "demo-crm" },
+  "$comment": "ASP.NET Core + EF Core + AutoMapper + RBAC. Mirrors the reference project verified under the .NET 10 SDK. The only fixture with project.block_comments, which pins the opt-in comment rules for C#, TypeScript and Angular templates.",
+  "project": { "name": "Demo CRM", "notification_title": "demo-crm", "block_comments": true },
   "answers": {
     "backend-framework": "aspnet-core", "orm": "efcore",
     "auth": "jwt", "authz": "rbac", "mapping": "automapper",

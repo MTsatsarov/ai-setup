@@ -144,5 +144,76 @@
     "enabledPlugins": [
       "typescript-lsp@claude-plugins-official"
     ]
-  }
+  },
+  "code_rules": [
+    {
+      "id": "backend-ts-suppress",
+      "include": [
+        "<% backend.src_dir %>/*.ts",
+        "<% backend.app_dir %>/*.spec.ts",
+        "<% backend.test_dir %>/*.ts"
+      ],
+      "pattern": "@ts-ignore|@ts-expect-error|@ts-nocheck|eslint-disable",
+      "message": "A suppressed type or lint error. Never reach green by disabling a check (safety invariant 4) — fix the code the checker is pointing at.",
+      "sample": "<% backend.src_dir %>/feature/feature.service.ts",
+      "bad": "// @ts-ignore",
+      "good": "const total = items.length;"
+    },
+    {
+      "id": "backend-any",
+      "include": [
+        "<% backend.src_dir %>/*.ts"
+      ],
+      "exclude": [
+        "<% backend.app_dir %>/*.spec.ts",
+        "<% backend.test_dir %>/*.ts"
+      ],
+      "pattern": ":[[:space:]]*any([^[:alnum:]_$]|$)|[[:space:]]as[[:space:]]+any([^[:alnum:]_$]|$)|<any>|(^|[^[:alnum:]_$])any\\[\\]",
+      "message": "An 'any' type. Use the real type, or 'unknown' and narrow it (widening to any is also safety invariant 4).",
+      "sample": "<% backend.src_dir %>/feature/feature.service.ts",
+      "bad": "const value: any = load();",
+      "good": "const value: unknown = load();"
+    },
+    {
+      "id": "backend-as-unknown-as",
+      "include": [
+        "<% backend.src_dir %>/*.ts"
+      ],
+      "exclude": [
+        "<% backend.app_dir %>/*.spec.ts",
+        "<% backend.test_dir %>/*.ts"
+      ],
+      "pattern": "as[[:space:]]+unknown[[:space:]]+as[[:space:]]",
+      "message": "An 'as unknown as' double cast. It switches the type checker off; parse or construct the real type instead.",
+      "sample": "<% backend.src_dir %>/feature/feature.service.ts",
+      "bad": "const user = raw as unknown as User;",
+      "good": "const user = parseUser(raw);"
+    },
+    {
+      "id": "backend-focused-test",
+      "include": [
+        "<% backend.app_dir %>/*.spec.ts",
+        "<% backend.test_dir %>/*.ts"
+      ],
+      "pattern": "(^|[^[:alnum:]_.$])(xit|xdescribe|fit|fdescribe)[[:space:]]*\\(|(it|describe|test)\\.(skip|only)[[:space:]]*\\(",
+      "message": "A skipped or focused test. Never reach green by disabling a check (safety invariant 4) — fix the test or stop and report.",
+      "sample": "<% backend.src_dir %>/feature/feature.service.spec.ts",
+      "bad": "it.skip('loads', () => {});",
+      "good": "it('loads', () => {});"
+    },
+    {
+      "id": "backend-ts-comment",
+      "kind": "comment",
+      "include": [
+        "<% backend.src_dir %>/*.ts",
+        "<% backend.app_dir %>/*.spec.ts",
+        "<% backend.test_dir %>/*.ts"
+      ],
+      "pattern": "^[[:space:]]*(//|/\\*)|[;{}),][[:space:]]*(//|/\\*)",
+      "message": "A new code comment. This project allows none, doc comments included — put the reasoning in the PR description.",
+      "sample": "<% backend.src_dir %>/feature/feature.service.ts",
+      "bad": "const total = 1; // running total",
+      "good": "const url = 'http://example.com/a';"
+    }
+  ]
 }

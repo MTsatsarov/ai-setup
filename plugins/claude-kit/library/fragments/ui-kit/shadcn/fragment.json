@@ -50,5 +50,21 @@
         "run": "npm --prefix <% frontend.app_dir %> install @base-ui/react class-variance-authority clsx tailwind-merge tw-animate-css shadcn @fontsource-variable/geist lucide-react"
       }
     ]
-  }
+  },
+  "code_rules": [
+    {
+      "id": "ui-raw-button",
+      "include": [
+        "<% frontend.src_dir %>/*.tsx"
+      ],
+      "exclude": [
+        "<% ui-kit.component_root %>/*"
+      ],
+      "pattern": "<button([[:space:]>]|$)",
+      "message": "A raw <button>. Use Button from '@/components/ui/button' so every button shares one variant set.",
+      "sample": "<% frontend.src_dir %>/components/feature-form.tsx",
+      "bad": "<button onClick={save}>Save</button>",
+      "good": "<Button onClick={save}>Save</Button>"
+    }
+  ]
 }

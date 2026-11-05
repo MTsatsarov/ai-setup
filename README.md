@@ -85,11 +85,13 @@ trees, Drizzle via typed column maps.
 
 ### Skills each answer generates
 
-Four agents, each dropped when its axis is `none`: **`backend-developer`** and
+Four stack agents, each dropped when its axis is `none`: **`backend-developer`** and
 **`backend-tester`** (`backend-framework`), **`frontend-developer`** and
-**`qa-web`** (`frontend-framework`). An agent's `skills:` list is exactly the
-skills in its group — kept in one place, so it cannot drift. Workflow skills
-belong to no agent, which is the one deliberate exception.
+**`qa-web`** (`frontend-framework`) — plus **`pr-reviewer`**, always present, which
+runs the review pipeline in a clean context for `/review-pr`, `/pr-self-check` and
+`/self-check`, so a review never anchors on the session that wrote the code. An
+agent's `skills:` list is exactly the skills in its group — kept in one place, so it
+cannot drift. Workflow skills belong to no agent, which is the one deliberate exception.
 
 **Backend** (under `backend-developer`):
 
@@ -149,13 +151,15 @@ Four properties, each earned from a failure the naive version hits:
 | Durable counters | written to `docs/plans/<id>.state.json` **before** each attempt | a compact silently granting 3 fresh attempts |
 | One stage per invocation | each stage ends the turn and re-arms via `ScheduleWakeup` | a mega-context that compacts mid-run |
 | Durable stops | the reason is written to a file before it is printed | an unattended run stalling with its reason in lost scrollback |
+| Verified means this code | `verify.sh` records the tree hash it passed; `pr.sh` and the push guard refuse any other tree | committing or pushing code edited after the PASS |
+| Rules a machine can check | each fragment declares `code_rules` (skipped tests, suppressed warnings, `any`, raw `<button>`…); `hooks/code-rules.sh` blocks an edit that adds one and `verify.sh` checks the branch | a rule the model forgets because it lived only in a skill |
 
 Underneath sits `skills/shared/safety-invariants.md` — one canonical list, with
 an explicit table of which rules a hook enforces and which are only prose.
 
 **Workflow skills** (`Workflow` group, owned by no axis, driven by you or by
 `/loop`): `plan-task`, `implement-plan`, `verify-change`, `self-check`, `pr`,
-`pr-self-check`, `pr-watch`, `review-pr`, `ship` — plus `create-task` when there
+`pr-self-check`, `pr-watch`, `review-pr`, `ship`, `list-skills` — plus `create-task` when there
 is a tracker and `manual-qa` when there is a frontend.
 
 **With no tracker**, the loop is ticket-less rather than degraded: the task is
@@ -163,9 +167,17 @@ described on the command line, the id is a slug derived from it, branches are
 two segments instead of three, and there is no drift check because nothing
 external can change underneath the run.
 
-`verify.sh`, `plan-state.sh`, `pr.sh` and `statusline.sh` are generated too —
+`verify.sh`, `verify-stamp.sh`, `plan-state.sh`, `pr.sh`, `list-skills.sh` and
+`statusline.sh` are generated too —
 `verify.sh`'s legs come from each fragment's declared steps, so adding an ORM or
 a frontend extends the gate rather than forking it.
+
+**Code rules** are the mechanical half of each code-quality skill. A fragment's
+`code_rules` name the files they apply to, an ERE, and a `sample`/`bad`/`good`
+triple that the generated `test-code-rules.sh` replays through the real hook — an
+ERE that matches nothing would otherwise look exactly like a clean codebase. A rule
+blocks only an *increase*, so legacy files stay editable. `project.block_comments`
+(asked in the interview, default off) adds rules that block new code comments.
 
 Deferred: mobile axes, and device/emulator QA.
 
@@ -183,7 +195,7 @@ plugins/claude-kit/
   library/slots.json                               slot -> owning axis
   library/base/                                    CLAUDE.md, README, agent, hook templates
   library/base/skills/                             the workflow loop + shared/ includes
-  library/base/scripts/                            verify.sh, plan-state.sh, pr.sh, statusline.sh
+  library/base/scripts/                            verify.sh, verify-stamp.sh, plan-state.sh, pr.sh, list-skills.sh, statusline.sh
   library/fragments/<axis>/<option>/               fragment.json + slots/ + sections/ + conventions/
   tests/                                           fixtures, golden trees, runner
 ```

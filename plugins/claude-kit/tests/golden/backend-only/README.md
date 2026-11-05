@@ -80,6 +80,7 @@ model's head**. A counter you cannot read back after a compact is not a cap.
 | `/pr-watch <pr>` | one tick — drive it with `/loop 15m` |
 | `/review-pr <pr>` | review someone else's PR and post comments |
 | `/ship <id\|"description">` | the stage machine that drives all of the above |
+| `/list-skills [filter] [--full]` | every skill with what it does, read from the frontmatter at run time |
 
 ### The state file
 
@@ -112,7 +113,9 @@ furniture.
 |---|---|
 | `verify.sh [tier] [scope] [workdir]` | prints a ` ```verify ` block last on stdout, exits 0/1. **The only thing allowed to decide.** |
 | `plan-state.sh <id> <show\|path\|get\|set>` | JSON state in the main checkout; warns on an unknown field |
-| `pr.sh <id> <slug> <message>` | the single choke point for a remote branch and a PR; always a draft |
+| `pr.sh <id> <slug> <message>` | the single choke point for a remote branch and a PR; always a draft; refuses a tree `verify.sh` did not pass |
+| `verify-stamp.sh tree\|head\|record\|check` | the trees `verify.sh` passed, shared by every worktree — what makes invariant 3 a check |
+| `list-skills.sh [filter] [--full]` | the skill inventory `/list-skills` prints |
 | `statusline.sh` | one line, never blocks, always exits 0 |
 
 ### verify.sh tiers
@@ -128,13 +131,15 @@ furniture.
 
 | Hook | Event | Enforces |
 |---|---|---|
-| `protect-plan-artifacts.sh` | PreToolUse · Bash | invariants 1, 2 and 5 |
+| `protect-plan-artifacts.sh` | PreToolUse · Bash | invariants 1, 2 and 5, and no push of an unverified tree (3) |
 | `protect-migrations.sh` | PreToolUse · Edit/Write | generated files stay generated |
 | `protect-generated-files.sh` | PreToolUse · Edit/Write | generated files stay generated |
+| `code-rules.sh` | PreToolUse · Edit/Write | the mechanical code rules — blocks only an increase, so legacy files stay editable |
 | `post-compact-reminder.sh` | SessionStart · compact | re-injects the rules and where the counters live |
 
-`test-protect-plan-artifacts.sh` is the fixture for the first one. **Run it after
-any edit to its patterns.** A PreToolUse hook that errors exits 2, which the
+`test-protect-plan-artifacts.sh` is the fixture for the first one, and
+`test-code-rules.sh` replays every code rule's bad and good example through the
+real hook. **Run it after any edit to its patterns.** A PreToolUse hook that errors exits 2, which the
 harness reads as *blocked* — so a broken guard is indistinguishable from a
 working one until it blocks something you needed.
 

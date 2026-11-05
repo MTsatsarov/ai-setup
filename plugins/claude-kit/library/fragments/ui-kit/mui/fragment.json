@@ -48,5 +48,16 @@
     "conventions": [
       { "from": "conventions/files/theme.ts", "to": "<% frontend.src_dir %>/theme.ts", "phase": "post" }
     ]
-  }
+  },
+  "code_rules": [
+    {
+      "id": "ui-raw-button",
+      "include": ["<% frontend.src_dir %>/*.tsx"],
+      "pattern": "<button([[:space:]>]|$)",
+      "message": "A raw <button>. Use Button from '@mui/material' so it reads the theme and keeps focus and ripple behaviour.",
+      "sample": "<% frontend.src_dir %>/components/FeatureForm.tsx",
+      "bad": "<button onClick={save}>Save</button>",
+      "good": "<Button onClick={save}>Save</Button>"
+    }
+  ]
 }

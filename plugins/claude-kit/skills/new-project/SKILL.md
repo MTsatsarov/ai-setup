@@ -69,6 +69,10 @@ Also collect, in one final `AskUserQuestion` or as plain follow-up questions:
   `gh api user --jq .login` as the default.
 - **base branch** — defaults to `main`. The generated `pr.sh` targets it, the
   artifact hook refuses direct pushes to it, and `verify.sh` diffs against it
+- **block new code comments?** — yes/no, default **no**. A team convention, not a
+  stack choice: yes adds comment rules to `hooks/code-rules.sh`, which then blocks
+  any edit that adds a code comment (doc comments included). Ask it plainly —
+  some teams want it, most do not.
 
 ## Phase 2 — Write the answers
 
@@ -85,7 +89,8 @@ Write `.claude-kit/answers.json`:
     "notification_title": "<title>",
     "repo": "<owner/repo or empty>",
     "github_user": "<user or empty>",
-    "base_branch": "<main, or the project's base branch>"
+    "base_branch": "<main, or the project's base branch>",
+    "block_comments": false
   },
   "answers": { "<axis-id>": "<option>", "...": "..." }
 }

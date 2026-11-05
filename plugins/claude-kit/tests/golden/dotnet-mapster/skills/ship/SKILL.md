@@ -140,8 +140,13 @@ fi
 "$MAIN"/.claude/scripts/plan-state.sh <ID> set worktree="$WORKTREE"
 ```
 
+The empty-slug guard is not defensive padding: without it the branch name ends
+in `/` and `git worktree add` fails with `not a valid branch name`, several
+stages away from the actual cause.
+
 A worktree keeps the main checkout and its uncommitted work untouched for the
-twenty minutes this run takes.
+twenty minutes this run takes. `git add -A` inside `pr.sh` is safe **only**
+because of this isolation — never run `/ship` directly in the main checkout.
 
 **Stage 2b** — execute `/implement-plan <ID>` inside the worktree. Its own
 self-check step is **skipped here**; Stage 4 runs it as its own stage, and doing

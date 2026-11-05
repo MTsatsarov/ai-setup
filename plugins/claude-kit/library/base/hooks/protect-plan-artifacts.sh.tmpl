@@ -173,4 +173,64 @@ while IFS= read -r S; do
   fi
 done <<< "$STATEMENTS"
 
+# =====================================================
+# PUSH WITHOUT A VERIFY PASS
+# =====================================================
+# Invariant 3, "never commit or push on a non-PASS verdict", is otherwise prose.
+# verify.sh records every tree it passes (scripts/verify-stamp.sh); a push of a
+# HEAD whose tree is not on that list is blocked. Commits are not gated here —
+# an intermediate local commit is harmless — but nothing leaves the machine
+# unverified. pr.sh, which commits and pushes inside one script this hook cannot
+# see into, carries the same check itself.
+#
+# Only pushes of THIS repository are gated: the target directory is followed
+# through `cd <dir>` statements and `git -C <dir>`, starting from the hook's
+# cwd. A target counts when it shares this repo's git common dir (the main
+# checkout and every worktree of it) or carries its own verify-stamp.sh.
+# Deleting a remote branch or pushing tags carries no code and is not gated.
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+STAMP="$(cd "$HOOK_DIR/../scripts" 2>/dev/null && pwd)/verify-stamp.sh"
+OWN_COMMON=$(git -C "$HOOK_DIR" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)
+DIR=$(echo "$INPUT" | jq -r '.cwd // empty')
+[[ -z "$DIR" ]] && DIR="$PWD"
+
+unquote() {
+  local d="$1"
+  d="${d#\"}"; d="${d%\"}"; d="${d#\'}"; d="${d%\'}"
+  d="${d/#\~/$HOME}"
+  [[ "$d" == /* ]] || d="$DIR/$d"
+  printf '%s' "$d"
+}
+
+RE_CD='^[[:space:]]*cd[[:space:]]+([^[:space:]]+)'
+RE_DASH_C='git[[:space:]]+-C[[:space:]]+([^[:space:]]+)'
+RE_NO_CODE='(--delete|[[:space:]]-d([[:space:]]|$)|--tags|[[:space:]]:[^[:space:]]+)'
+
+if [[ -x "$STAMP" ]]; then
+  # Raw statements, not $STATEMENTS: normalisation strips the `-C <dir>` that
+  # names the push target.
+  while IFS= read -r S; do
+    [[ -z "${S// }" ]] && continue
+    if [[ "$S" =~ $RE_CD ]]; then
+      DIR=$(unquote "${BASH_REMATCH[1]}")
+      continue
+    fi
+    N=$(normalize_git "$S")
+    [[ "$N" =~ $RE_PUSH ]] || continue
+    [[ "$N" =~ $RE_NO_CODE ]] && continue
+    TARGET="$DIR"
+    [[ "$S" =~ $RE_DASH_C ]] && TARGET=$(unquote "${BASH_REMATCH[1]}")
+    TOP=$(git -C "$TARGET" rev-parse --show-toplevel 2>/dev/null) || continue
+    COMMON=$(git -C "$TOP" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)
+    [[ -n "$OWN_COMMON" && "$COMMON" == "$OWN_COMMON" ]] || [[ -x "$TOP/.claude/scripts/verify-stamp.sh" ]] || continue
+    TREE=$("$STAMP" head "$TOP" 2>/dev/null) || continue
+    if ! "$STAMP" check "$TOP" "$TREE"; then
+      echo "BLOCKED: push without a verify PASS. HEAD's code ($TREE) was never passed by verify.sh" >&2
+      echo "         (safety invariant 3). Run .claude/scripts/verify.sh full on this exact code, then push." >&2
+      echo "         Offending statement: $S" >&2
+      exit 2
+    fi
+  done <<< "$(printf '%s' "$CMD" | tr '\n;&|' '\n\n\n\n')"
+fi
+
 exit 0

@@ -130,6 +130,11 @@ export function resolvePlan(answersDoc) {
         project.worktree_root ?? `~/repos/${project.slug ?? slug(project.name)}-worktrees`,
       plans_dir: project.plans_dir ?? 'docs/plans',
       qa_dir: project.qa_dir ?? 'docs/qa',
+      // A team convention, not a stack property, so it is a project option
+      // rather than an axis: an axis would double the combination matrix for a
+      // yes/no that changes one hook's rule list. Strictly boolean, because the
+      // answers file is hand-editable and "false" is a truthy string.
+      block_comments: project.block_comments === true,
     },
   };
   for (const frag of selected) {
@@ -255,7 +260,9 @@ export function resolvePlan(answersDoc) {
 
     const primaryAxis = def.required_axis;
     const primary = fragmentOf(lib, primaryAxis, answers[primaryAxis]);
-    const merged = { context: [], rules: [] };
+    // `vars` on the agent definition are defaults for an agent no fragment
+    // describes — a stack-independent agent still needs a CLAUDE.md summary.
+    const merged = { context: [], rules: [], ...(def.vars ?? {}) };
 
     for (const frag of selected) {
       const c = frag.agent?.[name];
@@ -314,6 +321,66 @@ export function resolvePlan(answersDoc) {
       (hooks[hook] ??= []).push(...rules.map((r) => ({ ...r, from: frag.id })));
     }
   }
+
+  /* 7-. Code rules — the mechanical half of each code-quality skill. ------
+   *
+   * A rule that is a text pattern belongs to a machine: it never forgets one,
+   * and the reviewer keeps its attention for what needs judgement. Each
+   * fragment contributes the rules for the files it owns; the base hook only
+   * supplies the engine (count matches before and after an edit, block on an
+   * increase), so a legacy file with old violations can still be edited.
+   *
+   * Every rule carries a `sample` path and a `bad`/`good` line. The generated
+   * test-code-rules.sh replays them through the real hook, which is the only
+   * way to prove an ERE does what its message claims — JS RegExp and grep -E
+   * disagree on POSIX classes, so the check cannot live here.
+   *
+   * `kind: "comment"` rules are the opt-in "no new comments" convention and
+   * are dropped unless project.block_comments is set.
+   */
+  const codeRules = [];
+  const ruleIds = new Map();
+  for (const frag of selected) {
+    for (const r of frag.code_rules ?? []) {
+      for (const k of ['id', 'include', 'pattern', 'message', 'sample', 'bad', 'good']) {
+        if (r[k] === undefined || (Array.isArray(r[k]) && !r[k].length)) {
+          fail(`${frag.id}: code rule "${r.id ?? '?'}" is missing "${k}"`);
+        }
+      }
+      // The engine stores rules as TSV and the fixture replays examples as one
+      // line each, so a tab or newline in any field silently shifts columns.
+      for (const [k, v] of Object.entries(r)) {
+        if ([v].flat().some((s) => typeof s === 'string' && /[\t\n]/.test(s))) {
+          fail(`${frag.id}: code rule "${r.id}" field "${k}" contains a tab or newline`);
+        }
+      }
+      if (r.kind === 'comment' && !vars.project.block_comments) continue;
+      if (ruleIds.has(r.id)) {
+        fail(`code rule id "${r.id}" is declared by both ${ruleIds.get(r.id)} and ${frag.id}`);
+      }
+      ruleIds.set(r.id, frag.id);
+      // Emitted as single-quoted bash array elements, so every field is
+      // quote-escaped here rather than trusting patterns to contain no `'`.
+      const q = (s) => String(s).replace(/'/g, `'\\''`);
+      codeRules.push({
+        id: r.id,
+        include_sh: q(r.include.join(' ')),
+        exclude_sh: q((r.exclude ?? []).join(' ')),
+        pattern_sh: q(r.pattern),
+        message_sh: q(r.message),
+        sample_sh: q(r.sample),
+        bad_sh: q(r.bad),
+        good_sh: q(r.good),
+        is_comment: r.kind === 'comment',
+        from: frag.id,
+      });
+    }
+  }
+  vars.code_rules = {
+    all: codeRules,
+    enabled: codeRules.length > 0,
+    has_comments: codeRules.some((r) => r.is_comment),
+  };
 
   const enabledPlugins = [
     ...new Set(selected.flatMap((f) => f.settings?.enabledPlugins ?? [])),
@@ -412,6 +479,17 @@ export function resolvePlan(answersDoc) {
     // mode is a section that silently appears in every project.
     enabled: hasFrontend,
   };
+  // Every app directory with its own node_modules. A fresh git worktree has
+  // none, so /ship's worktree and the review worktree both symlink the main
+  // checkout's — without it the first verify in a worktree fails on missing
+  // packages, and LSP in a review worktree resolves nothing.
+  const backendFrag = selected.find((f) => f.axis === 'backend-framework');
+  vars.node_app_dirs = [
+    ...(backendFrag?.traits?.runtime === 'node' && vars.backend.app_dir ? [vars.backend.app_dir] : []),
+    ...(hasFrontend && vars.frontend.app_dir ? [vars.frontend.app_dir] : []),
+  ];
+  vars.has_node_apps = vars.node_app_dirs.length > 0;
+
   /* The areas fan-out.
    *
    * Nearly everything in the loop is a repetition over this list: the plan

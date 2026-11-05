@@ -120,22 +120,30 @@ export function buildPayload(plan) {
     activeHooks.push(name);
   }
 
+  // The rule engine and its fixture exist only when some fragment contributed
+  // a rule — an engine with an empty rule list is a hook that runs for nothing
+  // on every edit.
+  if (v.code_rules.enabled) {
+    for (const name of ['code-rules', 'test-code-rules']) {
+      const tpl = `base/hooks/${name}.sh.tmpl`;
+      put(`hooks/${name}.sh`, render(readBase(tpl), v, tpl), 0o755);
+      activeHooks.push(name);
+    }
+  }
+
   /* settings.json ------------------------------------------------------- */
   // Built as an object rather than a template: JSON with <% each %> loops is a
   // comma-placement bug waiting to happen, and this has to be byte-valid.
+  //
+  // Every file guard is Edit|Write. protect-migrations used to be Edit only, on
+  // the theory that a new migration needs Write — but every ORM here generates
+  // migrations with its own CLI, so a Write into the migrations folder is
+  // exactly the hand-authored migration the hook exists to stop.
+  const fileGuards = ['protect-generated-files', 'protect-migrations', 'code-rules']
+    .filter((name) => activeHooks.includes(name))
+    .map((name) => ({ type: 'command', command: `.claude/hooks/${name}.sh` }));
   const pre = [];
-  if (activeHooks.includes('protect-generated-files')) {
-    pre.push({
-      matcher: 'Edit|Write',
-      hooks: [{ type: 'command', command: '.claude/hooks/protect-generated-files.sh' }],
-    });
-  }
-  if (activeHooks.includes('protect-migrations')) {
-    pre.push({
-      matcher: 'Edit',
-      hooks: [{ type: 'command', command: '.claude/hooks/protect-migrations.sh' }],
-    });
-  }
+  if (fileGuards.length) pre.push({ matcher: 'Edit|Write', hooks: fileGuards });
   // Bash, not Edit|Write: this one inspects the command line, because staging
   // an artifact and running destructive git are things you do with git, not
   // with the file tools.
@@ -189,6 +197,8 @@ export function buildPayload(plan) {
     'Bash(.claude/scripts/pr.sh:*)',
     'Bash(.claude/scripts/statusline.sh)',
     'Bash(.claude/hooks/test-protect-plan-artifacts.sh)',
+    ...(v.code_rules.enabled ? ['Bash(.claude/hooks/test-code-rules.sh)'] : []),
+    'Bash(.claude/scripts/list-skills.sh:*)',
     'Bash(git status:*)',
     'Bash(git diff:*)',
     'Bash(git log:*)',

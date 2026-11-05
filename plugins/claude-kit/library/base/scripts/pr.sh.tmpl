@@ -60,6 +60,18 @@ if [[ -z "$CHANGES" ]]; then
   exit 1
 fi
 
+# Invariant 3, "never commit or push on a non-PASS verdict", checked against
+# this exact code. verify.sh records the tree it passed; the tree hashed here is
+# the one the `git add -A` below is about to commit. Resolved next to THIS
+# script, because under /ship it runs inside a worktree.
+STAMP="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/verify-stamp.sh"
+TREE=$("$STAMP" tree .) || { echo "❌ could not hash the working tree"; exit 1; }
+if ! "$STAMP" check . "$TREE"; then
+  echo "❌ refusing to commit — verify.sh has not passed on this exact code (tree $TREE)."
+  echo "   Run .claude/scripts/verify.sh full, and rerun pr.sh after a PASS with no edits in between."
+  exit 1
+fi
+
 # =====================================================
 # BRANCH
 # =====================================================
@@ -86,6 +98,14 @@ git add -A -- ':/' "${ARTIFACT_EXCLUDES[@]}"
 if git diff --cached --name-only | grep -qE '^(<% project.plans_dir %>|<% project.qa_dir %>)/'; then
   echo "❌ a workflow artifact is staged — refusing to commit (invariant 2)"
   git diff --cached --name-only | grep -E '^(<% project.plans_dir %>|<% project.qa_dir %>)/'
+  exit 1
+fi
+
+# /ship symlinks node_modules into its worktree, and a `node_modules/` ignore
+# rule (trailing slash) matches only directories — never the symlink.
+if git diff --cached --name-only | grep -qE '(^|/)node_modules$'; then
+  echo "❌ a node_modules symlink is staged — refusing to commit"
+  echo "   Add 'node_modules' (no trailing slash) to that app's .gitignore."
   exit 1
 fi
 
