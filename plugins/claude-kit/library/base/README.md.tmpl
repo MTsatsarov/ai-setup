@@ -74,6 +74,7 @@ model's head**. A counter you cannot read back after a compact is not a cap.
 | Command | Purpose |
 |---|---|
 <% if tracker.has_tracker %>| `/create-task "<description>"` | draft a <% tracker.name %> task, get it approved, create it |
+| `/task-question <% tracker.id_example %> "<what you need to know>"` | prepare a question for a <% tracker.name %> task in your own voice; posts only on **post** |
 <% end %>| `/plan-task <id\|"description">` | explore, write the plan, seed the state |
 | `/implement-plan <id>` | dispatch the agents, verify and fix per area |
 | `/verify-change [tier] [scope]` | **the definition of done** — the only thing that decides |
