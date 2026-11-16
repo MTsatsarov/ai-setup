@@ -50,6 +50,7 @@
 - `review-pr`
 - `self-check`
 - `ship`
+- `task-question`
 - `verify-change`
 
 **Frontend**

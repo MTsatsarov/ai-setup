@@ -217,6 +217,13 @@
       "composite": false,
       "$comment": "Owned by the tracker axis, so tracker/none simply provides no body and a project without a tracker has no such skill — the ui-kit/none precedent. With the task described on the command line there is nothing to create."
     },
+    "task-question": {
+      "owner_axis": "tracker",
+      "group": "Workflow",
+      "agent": null,
+      "composite": false,
+      "$comment": "Owned by the tracker axis, like create-task: each tracker supplies its own read/post calls and voice-learning query, and tracker/none provides nothing, so a project without a tracker has no such skill."
+    },
     "list-skills": {
       "owner": "base",
       "body": "base/skills/list-skills/SKILL.md.tmpl",

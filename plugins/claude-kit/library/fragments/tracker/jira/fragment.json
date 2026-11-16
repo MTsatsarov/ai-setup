@@ -16,6 +16,7 @@
     "title_prefix": "[<KEY>] "
   },
   "provides": {
-    "create-task": "slots/create-task.md"
+    "create-task": "slots/create-task.md",
+    "task-question": "slots/task-question.md"
   }
 }

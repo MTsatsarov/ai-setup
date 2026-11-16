@@ -74,6 +74,7 @@ model's head**. A counter you cannot read back after a compact is not a cap.
 | Command | Purpose |
 |---|---|
 | `/create-task "<description>"` | draft a ClickUp task, get it approved, create it |
+| `/task-question 86abc12 "<what you need to know>"` | prepare a question for a ClickUp task in your own voice; posts only on **post** |
 | `/plan-task <id\|"description">` | explore, write the plan, seed the state |
 | `/implement-plan <id>` | dispatch the agents, verify and fix per area |
 | `/verify-change [tier] [scope]` | **the definition of done** — the only thing that decides |
